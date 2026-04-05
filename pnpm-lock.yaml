@@ -57,6 +57,25 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
+  apps/cron:
+    dependencies:
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.39
+        version: 20.19.39
+      prisma:
+        specifier: ^7.6.0
+        version: 7.6.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.7.1
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
   apps/frontend:
     dependencies:
       next:
