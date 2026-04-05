@@ -13,6 +13,8 @@ El monorepo se despliega como dos servicios separados:
 
 Archivo base: `apps/api/.env.example`
 
+- `DATABASE_URL`: conexión usada por Prisma Client en runtime
+- `DIRECT_URL`: conexión usada por Prisma CLI
 - `PORT`: puerto HTTP del servicio
 - `HOST`: host de bind para el servidor
 
@@ -55,7 +57,7 @@ Configuración base recomendada:
 
 Variables mínimas:
 
-- API: `PORT`, `HOST`
+- API: `DATABASE_URL`, `DIRECT_URL`, `PORT`, `HOST`
 - Frontend: `PORT`, `NEXT_PUBLIC_API_URL`
 
 ## Verificación mínima

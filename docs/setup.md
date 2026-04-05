@@ -25,7 +25,7 @@ cp apps/frontend/.env.example apps/frontend/.env.local
 
 Valores base:
 
-- API: `PORT=3001`, `HOST=0.0.0.0`
+- API: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/panoramax?schema=public`, `DIRECT_URL=postgresql://postgres:postgres@localhost:5432/panoramax?schema=public`, `PORT=3001`, `HOST=0.0.0.0`
 - Frontend: `PORT=3000`, `NEXT_PUBLIC_API_URL=http://localhost:3001`
 
 ## Desarrollo

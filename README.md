@@ -22,7 +22,7 @@ Monorepo `pnpm` para construir `panoramax`, una app de discovery social de panor
 
 ## Variables de entorno
 
-- `apps/api/.env.example`: `PORT`, `HOST`
+- `apps/api/.env.example`: `DATABASE_URL`, `DIRECT_URL`, `PORT`, `HOST`
 - `apps/frontend/.env.example`: `PORT`, `NEXT_PUBLIC_API_URL`
 
 ## Setup local
