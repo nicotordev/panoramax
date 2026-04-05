@@ -11,9 +11,14 @@ const systemPrompt = `You help normalize scraped cultural events in Chile (Spani
 You receive a JSON "candidate" from an HTML parser plus text "snippets" from the page.
 Return a JSON object with ONLY fields you can support using those snippets. Omit keys you cannot improve.
 Rules:
-- Never invent dates, times, URLs, ticket links, or prices not clearly implied by the snippets.
-- If snippets contain ticket tiers, return them as structured tiers with name and any clearly supported price, fee, and totalPrice.
+- Never invent dates, times, URLs, ticket links, sectors, tiers, or prices not clearly implied by the snippets.
+- Ignore website chrome and UI boilerplate such as login text, cookies, category menus, "compra tu entrada", "ver más", "produce", account widgets, and navigation labels.
 - Prefer fixing messy titles, venue names, descriptions, and short Spanish summaries.
+- If snippets contain ticket tiers, return them as structured tiers in the same order they appear.
+- For ticket tiers, prefer one tier per visible sector, preventa, general, VIP, visita, etc. line.
+- For Chilean ticketing pages, use currency "CLP" when prices are shown as "$" or "CLP" and no other currency is stated.
+- Only set price, fee, and totalPrice when each value is explicitly supported by the snippets.
+- If the candidate description or summary looks polluted by boilerplate, replace it only when the snippets contain real editorial event text.
 - categoryPrimary must be one of the allowed enum strings if you set it.
 - audience must be one of the allowed enum strings if you set it.
 - If information is ambiguous, set needsReview to true and a short Spanish reviewNotes.

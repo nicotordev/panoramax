@@ -98,10 +98,15 @@ export const ingestPuntoticket = async ({
         text.match(/\$\s*[\d.]+(?:[^$]{0,120}\$\s*[\d.]+){0,6}/)?.[0] ??
         null;
       const pricing = parsePriceRange(priceText);
-      const description =
+      const eventText =
         text.match(
           /EVENTO[^]+?PRODUCE:[^]+?(?:COMPRA TU ENTRADA|Nuestro sitio web utiliza cookies)/i,
-        )?.[0] ?? text.slice(0, 1800);
+        )?.[0] ??
+        text.match(
+          /EVENTO[^]+?(?:VER MÁS Ver menos|SELECCIONA FUNCI[ÓO]N|COMPRA TU ENTRADA)/i,
+        )?.[0] ??
+        null;
+      const description = eventText ?? text.slice(0, 1800);
       const imageUrl =
         $$('meta[property="og:image"]').attr("content") ??
         $$("img")
@@ -154,7 +159,17 @@ export const ingestPuntoticket = async ({
       };
 
       const snippets: RawSnippets = {
-        detail: text.slice(0, 8000),
+        detail: [
+          `TITLE:\n${title}`,
+          dateText ? `DATE:\n${dateText}` : null,
+          `VENUE:\n${venueName}`,
+          address ? `ADDRESS:\n${address}` : null,
+          categoryText ? `CATEGORY:\n${categoryText}` : null,
+          eventText ? `EVENT_TEXT:\n${eventText}` : null,
+          `PAGE_TEXT:\n${text.slice(0, 4000)}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
         pricing: priceText ?? undefined,
       };
 

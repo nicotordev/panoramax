@@ -112,9 +112,13 @@ export const ingestTicketplus = async ({
         text.match(/\$\s*[\d.]+(?:[^$]{0,120}\$\s*[\d.]+){0,8}/)?.[0] ??
         null;
       const pricing = parsePriceRange(priceText);
-      const description =
+      const eventText =
         text.match(/Fecha:[^]+?(?:¿Necesitas más ayuda\?|VER MÁS)/i)?.[0] ??
-        text.slice(0, 1800);
+        text.match(
+          /[A-ZÁÉÍÓÚ0-9"'“”().,:;!¿? \-/]{20,}Detalles del Evento:[^]+?(?:¿Necesitas más ayuda\?|VER MÁS)/i,
+        )?.[0] ??
+        null;
+      const description = eventText ?? text.slice(0, 1800);
       const imageUrl =
         $$('meta[property="og:image"]').attr("content") ??
         $$("img")
@@ -167,7 +171,18 @@ export const ingestTicketplus = async ({
       };
 
       const snippets: RawSnippets = {
-        detail: text.slice(0, 8000),
+        detail: [
+          `TITLE:\n${title}`,
+          dateText ? `DATE:\n${dateText}` : null,
+          `VENUE:\n${venueName}`,
+          address ? `ADDRESS:\n${address}` : null,
+          categoryText ? `CATEGORY:\n${categoryText}` : null,
+          eventText ? `EVENT_TEXT:\n${eventText}` : null,
+          introText ? `INTRO:\n${introText}` : null,
+          `PAGE_TEXT:\n${text.slice(0, 4000)}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
         pricing: priceText ?? undefined,
       };
 
