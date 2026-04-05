@@ -6,11 +6,11 @@ Lista accionable derivada de [`strategy/05-product-roadmap.md`](./strategy/05-pr
 
 ### Monorepo y app base
 
-- [ ] Definir estructura final del monorepo para `api` y `frontend`.
-- [ ] Alinear scripts raíz para desarrollo, build y typecheck.
-- [ ] Configurar variables de entorno por app y documentarlas.
-- [ ] Dejar una base mínima de configuración para despliegue.
-- [ ] Documentar setup local para nuevos contributors.
+- [x] Definir estructura final del monorepo para `api` y `frontend`.
+- [x] Alinear scripts raíz para desarrollo, build y typecheck.
+- [x] Configurar variables de entorno por app y documentarlas.
+- [x] Dejar una base mínima de configuración para despliegue.
+- [x] Documentar setup local para nuevos contributors.
 
 ### Pipeline simple de ingesta
 

@@ -25,6 +25,10 @@ Monorepo `pnpm` para construir `panoramax`, una app de discovery social de panor
 - `apps/api/.env.example`: `PORT`, `HOST`
 - `apps/frontend/.env.example`: `PORT`, `NEXT_PUBLIC_API_URL`
 
+## Setup local
+
+Guía rápida para contributors nuevos en `docs/setup.md`.
+
 ## Docker y Railway
 
 Cada servicio se builda con su propio `Dockerfile`:
