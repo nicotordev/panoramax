@@ -5,12 +5,15 @@ import { toPrismaJsonInput } from "../lib/prisma-json.js";
 import { prisma } from "../lib/prisma.js";
 import type {
   EventCreateInput,
+  EventTierInput,
   EventUpdateInput,
   ListEventsQuery,
 } from "../lib/validation/events.schema.js";
 
+type EventCreateInputWithoutTiers = Omit<EventCreateInput, "tiers">;
+
 function toCreateData(
-  data: EventCreateInput,
+  data: EventCreateInputWithoutTiers,
 ): Prisma.EventUncheckedCreateInput {
   const { categoriesSource, tags, editorialLabels, rawPayload, ...rest } = data;
 
@@ -21,6 +24,19 @@ function toCreateData(
     tags: tags ?? [],
     editorialLabels: editorialLabels ?? [],
   };
+}
+
+function toTierCreateData(tiers: EventTierInput[] | undefined, eventId: string) {
+  return (tiers ?? []).map((tier, index) => ({
+    eventId,
+    name: tier.name,
+    price: tier.price ?? null,
+    fee: tier.fee ?? null,
+    totalPrice: tier.totalPrice ?? null,
+    currency: tier.currency ?? "CLP",
+    sortOrder: tier.sortOrder ?? index,
+    rawText: tier.rawText ?? null,
+  }));
 }
 
 class EventsService {
@@ -52,6 +68,7 @@ class EventsService {
         orderBy: { startAt: "desc" },
         skip,
         take: limit,
+        include: { tiers: { orderBy: { sortOrder: "asc" } } },
       }),
       prisma.event.count({ where }),
     ]);
@@ -67,28 +84,55 @@ class EventsService {
   public async getById(
     id: string,
   ): Promise<ReturnType<typeof serializeEvent> | null> {
-    const row = await prisma.event.findUnique({ where: { id } });
+    const row = await prisma.event.findUnique({
+      where: { id },
+      include: { tiers: { orderBy: { sortOrder: "asc" } } },
+    });
     return row ? serializeEvent(row) : null;
   }
 
   public async create(data: EventCreateInput) {
-    const row = await prisma.event.create({
-      data: toCreateData(data),
+    const { tiers, ...eventData } = data;
+    const row = await prisma.$transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: toCreateData(eventData),
+      });
+      const tierData = toTierCreateData(tiers, created.id);
+      if (tierData.length > 0) {
+        await tx.eventTier.createMany({ data: tierData });
+      }
+      return tx.event.findUniqueOrThrow({
+        where: { id: created.id },
+        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+      });
     });
     return serializeEvent(row);
   }
 
   public async update(id: string, data: EventUpdateInput) {
-    const { rawPayload, ...rest } = data;
+    const { rawPayload, tiers, ...rest } = data;
     const patch: Prisma.EventUncheckedUpdateInput = {
       ...rest,
       ...(rawPayload !== undefined
         ? { rawPayload: toPrismaJsonInput(rawPayload) }
         : {}),
     };
-    const row = await prisma.event.update({
-      where: { id },
-      data: patch,
+    const row = await prisma.$transaction(async (tx) => {
+      await tx.event.update({
+        where: { id },
+        data: patch,
+      });
+      if (tiers !== undefined) {
+        await tx.eventTier.deleteMany({ where: { eventId: id } });
+        const tierData = toTierCreateData(tiers, id);
+        if (tierData.length > 0) {
+          await tx.eventTier.createMany({ data: tierData });
+        }
+      }
+      return tx.event.findUniqueOrThrow({
+        where: { id },
+        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+      });
     });
     return serializeEvent(row);
   }

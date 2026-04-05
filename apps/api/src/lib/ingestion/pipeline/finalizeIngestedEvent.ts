@@ -1,4 +1,4 @@
-import type { EventCreateInput } from "../../../generated/prisma/models/Event.js";
+import type { EventCreateInput } from "../../validation/events.schema.js";
 import { enrichDisambiguateCandidate } from "./enrichDisambiguate.js";
 import { shouldRunLlmEnrichment } from "./llmEnv.js";
 import { mergeCandidateWithLlm } from "./mergeCandidateWithLlm.js";

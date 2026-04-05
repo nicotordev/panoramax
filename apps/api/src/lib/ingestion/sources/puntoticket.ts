@@ -31,31 +31,17 @@ export const ingestPuntoticket = async ({
   const listingHtml = await scrapeHtml(listingUrl);
   const $ = load(listingHtml);
   const requestedLimit = limit ?? 20;
-  const candidateLinks = [
+  const listingLinks = [
     ...new Set(
-      $("a[href]")
+      $("#listado-eventos-shuffle article a[href]")
         .toArray()
         .map((node) => $(node).attr("href"))
         .filter((href): href is string => Boolean(href))
-        .filter(
-          (href) =>
-            href.startsWith("/") &&
-            !href.startsWith("//") &&
-            !href.includes("/Account/") &&
-            !href.includes("/Cliente/") &&
-            href !== "/" &&
-            href !== "/todos" &&
-            href !== "/musica" &&
-            href !== "/deportes" &&
-            href !== "/teatro" &&
-            href !== "/familia" &&
-            href !== "/especiales",
-        )
         .map((href) => absoluteUrl(baseUrl, href)),
     ),
-  ]
-    .filter((url) => !/\/paginas\//.test(url) && !/\/evento\/?$/.test(url))
-    .slice((page - 1) * requestedLimit * 10, page * requestedLimit * 10);
+  ].filter((url) => !/\/paginas\//.test(url) && !/\/evento\/?$/.test(url));
+  const offset = Math.max(page - 1, 0) * requestedLimit;
+  const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
   const events = [];
 
   for (const sourceUrl of candidateLinks) {

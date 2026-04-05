@@ -3,8 +3,8 @@ import {
   CategoryPrimary,
   SourceType,
 } from "../../../generated/prisma/enums.js";
-import type { EventCreateInput } from "../../../generated/prisma/models/Event.js";
 import { scrapeHtml } from "../../brightdata.js";
+import type { EventCreateInput } from "../../validation/events.schema.js";
 import type {
   IngestSourceOptions,
   IngestionError,

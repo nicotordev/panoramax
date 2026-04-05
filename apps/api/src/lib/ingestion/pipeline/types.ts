@@ -34,6 +34,16 @@ const audienceZ = z.enum([
   Audience.all_ages,
 ]);
 
+const ticketTierSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().nullable().optional(),
+  fee: z.number().nullable().optional(),
+  totalPrice: z.number().nullable().optional(),
+  currency: z.string().optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
+  rawText: z.string().nullable().optional(),
+});
+
 /** Parser output: partial event fields + optional location overrides (e.g. Chile Cultura). */
 export const eventCandidateSchema = z.object({
   source: z.string().min(1),
@@ -68,6 +78,7 @@ export const eventCandidateSchema = z.object({
   priceText: z.string().nullable().optional(),
   priceMin: z.number().nullable().optional(),
   priceMax: z.number().nullable().optional(),
+  tiers: z.array(ticketTierSchema).optional(),
   locationNotes: z.string().nullable().optional(),
   rawTitle: z.string().nullable().optional(),
   qualityScore: z.number().optional(),
@@ -110,6 +121,7 @@ export const llmEnrichmentPatchSchema = z.object({
   /** Only applied when the candidate has no dateText yet. */
   dateText: z.string().optional(),
   qualityScore: z.number().optional(),
+  tiers: z.array(ticketTierSchema).optional(),
 });
 
 export type LlmEnrichmentPatch = z.infer<typeof llmEnrichmentPatchSchema>;

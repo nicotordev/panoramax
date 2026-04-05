@@ -1,0 +1,89 @@
+export interface EventTier {
+  id: string
+  eventId: string
+  name: string
+  price?: string | null
+  fee?: string | null
+  totalPrice?: string | null
+  currency: string
+  sortOrder: number
+  rawText?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+// Event model (as per schema.prisma)
+export interface Event {
+  id: string
+  source: string
+  sourceType: "editorial" | "venue" | "ticketing" | "organizer"
+  sourceEventId?: string | null
+  sourceUrl: string
+  ticketUrl?: string | null
+  importedAt: string
+  lastSeenAt: string
+  rawTitle?: string | null
+  rawPayload?: object | null
+  title: string
+  subtitle?: string | null
+  summary?: string | null
+  description?: string | null
+  language?: string | null
+  imageUrl?: string | null
+  imageAttribution?: string | null
+  startAt: string
+  endAt?: string | null
+  timezone: string
+  allDay: boolean
+  dateText?: string | null
+  status:
+    | "scheduled"
+    | "cancelled"
+    | "postponed"
+    | "sold_out"
+    | "expired"
+    | "draft"
+  venueName: string
+  venueRaw?: string | null
+  address?: string | null
+  commune: string
+  city: string
+  region?: string | null
+  country: string
+  latitude?: string | null // Prisma Decimal fields as strings
+  longitude?: string | null
+  isOnline: boolean
+  locationNotes?: string | null
+  isFree: boolean
+  priceMin?: string | null // Prisma Decimal fields as strings
+  priceMax?: string | null
+  currency: string
+  priceText?: string | null
+  availabilityText?: string | null
+  tiers?: EventTier[]
+  categoryPrimary:
+    | "music"
+    | "theatre"
+    | "standup"
+    | "dance"
+    | "festival"
+    | "fair"
+    | "exhibition"
+    | "food_drink"
+    | "family"
+    | "sports"
+    | "workshop"
+    | "special_experience"
+  categorySecondary?: string | null
+  categoriesSource: string[]
+  tags: string[]
+  audience?: "adult" | "family" | "kids" | "all_ages" | null
+  editorialLabels: string[]
+  dedupeKey?: string | null
+  canonicalEventId?: string | null
+  qualityScore?: number | null
+  needsReview: boolean
+  reviewNotes?: string | null
+  createdAt: string
+  updatedAt: string
+}

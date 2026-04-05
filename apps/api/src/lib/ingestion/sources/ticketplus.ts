@@ -31,17 +31,18 @@ export const ingestTicketplus = async ({
   const listingHtml = await scrapeHtml(listingUrl);
   const $ = load(listingHtml);
   const requestedLimit = limit ?? 20;
-  const candidateLinks = [
+  const listingLinks = [
     ...new Set(
-      $('a[href^="/events/"]')
+      $('[data-referal-link], .element-item a[href^="/events/"]')
         .toArray()
         .map((node) => $(node).attr("href"))
         .filter((href): href is string => Boolean(href))
+        .filter((href) => href.startsWith("/events/"))
         .map((href) => absoluteUrl(baseUrl, href)),
     ),
-  ]
-    .filter((url) => !/\/events\/abono-/i.test(url))
-    .slice((page - 1) * requestedLimit * 50, page * requestedLimit * 50);
+  ].filter((url) => !/\/events\/(?:abono|membresia)-/i.test(url));
+  const offset = Math.max(page - 1, 0) * requestedLimit;
+  const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
   const events = [];
 
   for (const sourceUrl of candidateLinks) {

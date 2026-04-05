@@ -4,9 +4,14 @@ import {
   CategoryPrimary,
   SourceType,
 } from "../../../generated/prisma/enums.js";
-import type { EventCreateInput } from "../../../generated/prisma/models/Event.js";
+import { Prisma } from "../../../generated/prisma/client.js";
 import { scrapeHtml } from "../../brightdata.js";
 import { prisma } from "../../prisma.js";
+import { toPrismaJsonInput } from "../../prisma-json.js";
+import type {
+  EventCreateInput,
+  EventTierInput,
+} from "../../validation/events.schema.js";
 
 export type IngestSourceOptions = {
   page?: number;
@@ -167,8 +172,13 @@ const venueAliases = [
 export const normalizeText = (value: string | null | undefined) =>
   value?.replace(/\s+/g, " ").trim() || null;
 
-export const extractBodyText = (html: string) =>
-  load(html)("body").text().replace(/\s+/g, " ").trim();
+export const extractBodyText = (html: string) => {
+  const $ = load(html);
+
+  $("script, style, noscript, template").remove();
+
+  return $("body").text().replace(/\s+/g, " ").trim();
+};
 
 export const absoluteUrl = (baseUrl: string, pathOrUrl: string) =>
   new URL(pathOrUrl, baseUrl).toString();
@@ -496,6 +506,7 @@ export const defaultEvent = ({
   priceText,
   priceMin,
   priceMax,
+  tiers,
   categoryPrimary,
   categorySecondary,
   categoriesSource,
@@ -532,6 +543,7 @@ export const defaultEvent = ({
   priceText?: string | null;
   priceMin?: number | null;
   priceMax?: number | null;
+  tiers?: EventTierInput[];
   categoryPrimary: CategoryPrimary;
   categorySecondary?: string | null;
   categoriesSource?: string[];
@@ -564,6 +576,7 @@ export const defaultEvent = ({
     endAt: endAt ?? null,
     timezone: "America/Santiago",
     allDay: allDay ?? false,
+    status: "scheduled" as const,
     dateText: dateText ?? null,
     venueName: canonicalVenueName,
     venueRaw: venueRaw ?? venueName,
@@ -572,11 +585,13 @@ export const defaultEvent = ({
     city,
     region: region ?? null,
     country: "CL",
+    isOnline: false,
     isFree: isFree ?? false,
     priceMin: priceMin ?? null,
     priceMax: priceMax ?? null,
     currency: "CLP",
     priceText: priceText ?? null,
+    tiers: tiers ?? [],
     categoryPrimary,
     categorySecondary: categorySecondary ?? null,
     categoriesSource: categoriesSource ?? [],
@@ -595,20 +610,91 @@ export const defaultEvent = ({
   };
 };
 
-export const upsertEvent = async (event: EventCreateInput) =>
-  prisma.event.upsert({
-    where: {
-      source_sourceUrl: {
-        source: event.source,
-        sourceUrl: event.sourceUrl,
+function toEventUncheckedCreateInput(
+  event: Omit<EventCreateInput, "tiers">,
+): Prisma.EventUncheckedCreateInput {
+  const {
+    categoriesSource,
+    tags,
+    editorialLabels,
+    rawPayload,
+    ...rest
+  } = event;
+
+  return {
+    ...rest,
+    rawPayload: toPrismaJsonInput(rawPayload),
+    categoriesSource: categoriesSource ?? [],
+    tags: tags ?? [],
+    editorialLabels: editorialLabels ?? [],
+  };
+}
+
+function toEventUncheckedUpdateInput(
+  event: Omit<EventCreateInput, "tiers">,
+): Prisma.EventUncheckedUpdateInput {
+  const {
+    categoriesSource,
+    tags,
+    editorialLabels,
+    rawPayload,
+    ...rest
+  } = event;
+
+  return {
+    ...rest,
+    rawPayload: toPrismaJsonInput(rawPayload),
+    categoriesSource: categoriesSource ?? [],
+    tags: tags ?? [],
+    editorialLabels: editorialLabels ?? [],
+  };
+}
+
+export const upsertEvent = async (
+  event: EventCreateInput & { tiers?: EventTierInput[] },
+) => {
+  const { tiers = [], ...eventData } = event;
+
+  return prisma.$transaction(async (tx) => {
+    const saved = await tx.event.upsert({
+      where: {
+        source_sourceUrl: {
+          source: event.source,
+          sourceUrl: event.sourceUrl,
+        },
       },
-    },
-    create: event,
-    update: {
-      ...event,
-      lastSeenAt: new Date(),
-    },
+      create: toEventUncheckedCreateInput(eventData),
+      update: {
+        ...toEventUncheckedUpdateInput(eventData),
+        lastSeenAt: new Date(),
+      },
+    });
+
+    await tx.eventTier.deleteMany({
+      where: { eventId: saved.id },
+    });
+
+    if (tiers.length > 0) {
+      await tx.eventTier.createMany({
+        data: tiers.map((tier, index) => ({
+          eventId: saved.id,
+          name: tier.name,
+          price: tier.price ?? null,
+          fee: tier.fee ?? null,
+          totalPrice: tier.totalPrice ?? null,
+          currency: tier.currency ?? "CLP",
+          sortOrder: tier.sortOrder ?? index,
+          rawText: tier.rawText ?? null,
+        })),
+      });
+    }
+
+    return tx.event.findUniqueOrThrow({
+      where: { id: saved.id },
+      include: { tiers: { orderBy: { sortOrder: "asc" } } },
+    });
   });
+};
 
 export const scrapeEventPages = async (urls: string[]) =>
   Promise.all(urls.map((url) => scrapeHtml(url)));

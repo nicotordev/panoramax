@@ -12,6 +12,7 @@ You receive a JSON "candidate" from an HTML parser plus text "snippets" from the
 Return a JSON object with ONLY fields you can support using those snippets. Omit keys you cannot improve.
 Rules:
 - Never invent dates, times, URLs, ticket links, or prices not clearly implied by the snippets.
+- If snippets contain ticket tiers, return them as structured tiers with name and any clearly supported price, fee, and totalPrice.
 - Prefer fixing messy titles, venue names, descriptions, and short Spanish summaries.
 - categoryPrimary must be one of the allowed enum strings if you set it.
 - audience must be one of the allowed enum strings if you set it.

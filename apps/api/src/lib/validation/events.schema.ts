@@ -7,6 +7,16 @@ import {
 } from "../../generated/prisma/enums.js";
 
 const decimalNullable = z.union([z.number(), z.string()]).nullish();
+const eventTierSchema = z.object({
+  id: z.uuid().optional(),
+  name: z.string().min(1),
+  price: decimalNullable,
+  fee: decimalNullable,
+  totalPrice: decimalNullable,
+  currency: z.string().default("CLP"),
+  sortOrder: z.number().int().nonnegative().optional(),
+  rawText: z.string().nullish(),
+});
 
 const eventCoreSchema = z.object({
   id: z.uuid().optional(),
@@ -49,6 +59,7 @@ const eventCoreSchema = z.object({
   currency: z.string().default("CLP"),
   priceText: z.string().nullish(),
   availabilityText: z.string().nullish(),
+  tiers: z.array(eventTierSchema).optional(),
   categoryPrimary: z.nativeEnum(CategoryPrimary),
   categorySecondary: z.string().nullish(),
   categoriesSource: z.array(z.string()).optional(),
@@ -94,3 +105,4 @@ export const eventIdParamSchema = z.object({
 export type EventCreateInput = z.infer<typeof eventCreateBodySchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateBodySchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
+export type EventTierInput = z.infer<typeof eventTierSchema>;

@@ -12,6 +12,7 @@
     "ingest:ticketplus": "tsx src/scripts/ingest-source.ts ticketplus",
     "ingest:puntoticket": "tsx src/scripts/ingest-source.ts puntoticket",
     "ingest:sources": "tsx src/scripts/ingest-sources.ts",
+    "ingest:all-pages": "tsx src/scripts/ingest-all-pages.ts",
     "smoke:ingest": "tsx src/scripts/smoke-ingest.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "prisma:generate": "prisma generate",

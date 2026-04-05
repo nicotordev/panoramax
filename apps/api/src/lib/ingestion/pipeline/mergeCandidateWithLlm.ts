@@ -14,6 +14,21 @@ function mergeTags(base: string[] | undefined, extra: string[] | undefined) {
   return out;
 }
 
+function mergeTiers(
+  base: EventCandidate["tiers"],
+  extra: LlmEnrichmentPatch["tiers"],
+) {
+  if (!extra?.length) {
+    return base;
+  }
+
+  return extra.map((tier, index) => ({
+    ...tier,
+    currency: tier.currency ?? "CLP",
+    sortOrder: tier.sortOrder ?? index,
+  }));
+}
+
 /** Deterministic merge: parser wins for ids/URLs; LLM fills or polishes text and soft fields. */
 export function mergeCandidateWithLlm(
   candidate: EventCandidate,
@@ -57,5 +72,6 @@ export function mergeCandidateWithLlm(
       patch.qualityScore !== undefined
         ? patch.qualityScore
         : candidate.qualityScore,
+    tiers: mergeTiers(candidate.tiers, patch.tiers),
   };
 }

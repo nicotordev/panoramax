@@ -1,4 +1,4 @@
-import type { EventCreateInput } from "../../../generated/prisma/models/Event.js";
+import type { EventCreateInput } from "../../validation/events.schema.js";
 import {
   defaultEvent,
   inferLocation,
@@ -95,6 +95,15 @@ export function normalizeEventFinal(
     priceText: candidate.priceText ?? null,
     priceMin: candidate.priceMin ?? null,
     priceMax: candidate.priceMax ?? null,
+    tiers: candidate.tiers?.map((tier, index) => ({
+      name: tier.name,
+      price: tier.price ?? null,
+      fee: tier.fee ?? null,
+      totalPrice: tier.totalPrice ?? null,
+      currency: tier.currency ?? "CLP",
+      sortOrder: tier.sortOrder ?? index,
+      rawText: tier.rawText ?? null,
+    })),
     categoryPrimary,
     categorySecondary: candidate.categorySecondary ?? null,
     categoriesSource: candidate.categoriesSource ?? [],
