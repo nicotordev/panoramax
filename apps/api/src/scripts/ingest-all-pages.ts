@@ -10,6 +10,7 @@ import {
 const sourcesArg = process.argv.find((arg) => arg.startsWith("--sources="));
 const fromPageArg = process.argv.find((arg) => arg.startsWith("--from-page="));
 const toPageArg = process.argv.find((arg) => arg.startsWith("--to-page="));
+const maxPagesArg = process.argv.find((arg) => arg.startsWith("--max-pages="));
 const limitArg = process.argv.find((arg) => arg.startsWith("--limit="));
 const persistArg = process.argv.find((arg) => arg.startsWith("--persist="));
 const stopOnEmptyArg = process.argv.find((arg) =>
@@ -33,7 +34,8 @@ const requestedSources = sourcesArg
   : sourceKeys;
 
 const fromPage = fromPageArg ? Number(fromPageArg.split("=")[1]) : 1;
-const toPage = toPageArg ? Number(toPageArg.split("=")[1]) : 10;
+const toPage = toPageArg ? Number(toPageArg.split("=")[1]) : undefined;
+const maxPages = maxPagesArg ? Number(maxPagesArg.split("=")[1]) : undefined;
 const limit = limitArg ? Number(limitArg.split("=")[1]) : undefined;
 
 // ENSURE: persist defaults to true (persist by default, "+" indication), but user can disable with --persist=false
@@ -62,13 +64,15 @@ type IngestionSummary = {
 
 if (
   !Number.isFinite(fromPage) ||
-  !Number.isFinite(toPage) ||
   fromPage < 1 ||
-  toPage < fromPage ||
+  (toPage !== undefined &&
+    (!Number.isFinite(toPage) || toPage < fromPage)) ||
+  (maxPages !== undefined &&
+    (!Number.isFinite(maxPages) || maxPages < 1)) ||
   !Number.isFinite(concurrency)
 ) {
   console.error(
-    "Usage: tsx src/scripts/ingest-all-pages.ts [--sources=gam,ticketplus] [--from-page=1] [--to-page=10] [--limit=50] [--persist=false] [--stop-on-empty=true] [--enrich-with-llm=true] [--concurrency=3]\n\nNOTE: --persist now defaults to true (persist by default, +); supply --persist=false to skip persistence."
+    "Usage: tsx src/scripts/ingest-all-pages.ts [--sources=gam,ticketplus] [--from-page=1] [--to-page=10] [--max-pages=100] [--limit=50] [--persist=false] [--stop-on-empty=true] [--enrich-with-llm=true] [--concurrency=3]\n\nIf --to-page is omitted, the script keeps advancing until a source returns an empty page. Use --max-pages as a safety cap when needed.\n\nNOTE: --persist now defaults to true (persist by default, +); supply --persist=false to skip persistence."
   );
   process.exit(1);
 }
@@ -87,6 +91,11 @@ function logResult(source: string, page: number, result: IngestionResult) {
   console.log(
     `[${new Date().toISOString()}] Completed source=${source} page=${page} | processed=${result.processed}, skipped=${result.skipped}, persisted=${result.persisted}, errors=${result.errors.length}`,
   );
+  for (const error of result.errors.slice(0, 3)) {
+    console.log(
+      `[${new Date().toISOString()}] source=${source} page=${page} error[${error.stage}] ${error.url ?? ""} ${error.message}`,
+    );
+  }
 }
 
 function logError(source: string, page: number, error: unknown) {
@@ -111,7 +120,17 @@ function toSummary(result: IngestionResult): IngestionSummary {
 async function runSource(source: SourceKey): Promise<IngestionSummary[]> {
   const summaries: IngestionSummary[] = [];
 
-  for (let page = fromPage; page <= toPage; page += 1) {
+  for (let page = fromPage; ; page += 1) {
+    if (toPage !== undefined && page > toPage) {
+      break;
+    }
+    if (maxPages !== undefined && page - fromPage >= maxPages) {
+      console.log(
+        `[${new Date().toISOString()}] Stopping source=${source} due to max-pages=${maxPages}`,
+      );
+      break;
+    }
+
     logStart(source, page);
 
     try {

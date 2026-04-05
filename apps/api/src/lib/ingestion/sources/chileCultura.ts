@@ -10,7 +10,7 @@ import type {
   IngestionError,
   IngestionResult,
 } from "../core/shared.js";
-import { upsertEvent } from "../core/shared.js";
+import { isPastEvent, upsertEvent } from "../core/shared.js";
 import { parseChileCulturaStartAt } from "../pipeline/chileDate.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
@@ -397,6 +397,9 @@ export class ChileCulturaIngestor {
           url: candidate.sourceUrl,
           message: "OpenAI enrichment failed; stored parser-only fields",
         });
+      }
+      if (isPastEvent(event)) {
+        continue;
       }
       normalizedEvents.push(event);
     }

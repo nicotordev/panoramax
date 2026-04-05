@@ -482,6 +482,22 @@ export const buildDedupeKey = (
     .map(slugify)
     .join("__");
 
+export const isPastEvent = ({
+  startAt,
+  endAt,
+  allDay,
+}: Pick<EventCreateInput, "startAt" | "endAt" | "allDay">) => {
+  const now = new Date();
+
+  if (allDay) {
+    const eventDay = (endAt ?? startAt).toISOString().slice(0, 10);
+    const today = now.toISOString().slice(0, 10);
+    return eventDay < today;
+  }
+
+  return (endAt ?? startAt).getTime() < now.getTime();
+};
+
 export const defaultEvent = ({
   source,
   sourceType,

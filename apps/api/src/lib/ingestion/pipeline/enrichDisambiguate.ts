@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { mapCategory } from "../core/shared.js";
 import type {
   EventCandidate,
   LlmEnrichmentPatch,
@@ -36,19 +37,242 @@ Rules:
 - Do not invent tiers, split bundles, or infer fees.
 - If the pricing text does not contain tiers, return an empty tiers array.`;
 
-const pricingOnlySchema = z.object({
-  tiers: z.array(
-    z.object({
-      name: z.string().min(1),
-      price: z.number().nullable().optional(),
-      fee: z.number().nullable().optional(),
-      totalPrice: z.number().nullable().optional(),
-      currency: z.string().optional(),
-      sortOrder: z.number().int().nonnegative().optional(),
-      rawText: z.string().nullable().optional(),
-    }),
-  ),
+const looseNumber = z.union([z.number(), z.string()]).nullable().optional();
+
+const looseTierSchema = z.object({
+  name: z.string().optional(),
+  label: z.string().optional(),
+  title: z.string().optional(),
+  sector: z.string().optional(),
+  tier: z.string().optional(),
+  price: looseNumber,
+  fee: looseNumber,
+  totalPrice: looseNumber,
+  total: looseNumber,
+  amount: looseNumber,
+  currency: z.string().optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
+  rawText: z.string().nullable().optional(),
 });
+
+const loosePatchSchema = z.object({
+  title: z.string().optional(),
+  subtitle: z.string().optional(),
+  summary: z.string().optional(),
+  description: z.string().optional(),
+  venueName: z.string().optional(),
+  address: z.string().optional(),
+  categoryPrimary: z.string().optional(),
+  categorySecondary: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  locationNotes: z.string().optional(),
+  reviewNotes: z.string().optional(),
+  needsReview: z.boolean().optional(),
+  audience: z.string().optional(),
+  dateText: z.string().optional(),
+  qualityScore: z.number().optional(),
+  tiers: z.array(looseTierSchema).optional(),
+});
+
+const loosePricingOnlySchema = z.object({
+  tiers: z.array(looseTierSchema).optional(),
+});
+
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  return text.slice(start, end + 1);
+}
+
+function normalizeMoney(value: unknown): number | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const cleaned = value.replace(/[^\d,.-]/g, "").trim();
+  if (!cleaned) {
+    return undefined;
+  }
+
+  const normalized = cleaned.includes(".") && cleaned.includes(",")
+    ? cleaned.replace(/\./g, "").replace(",", ".")
+    : cleaned.replace(/\./g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function deriveTierName(tier: z.infer<typeof looseTierSchema>) {
+  const direct =
+    tier.name ??
+    tier.label ??
+    tier.title ??
+    tier.sector ??
+    tier.tier ??
+    undefined;
+
+  if (direct?.trim()) {
+    return direct.trim();
+  }
+
+  if (tier.rawText?.trim()) {
+    const match = tier.rawText.match(/^([^:$\n]+?)(?::|\$|$)/);
+    if (match?.[1]?.trim()) {
+      return match[1].trim();
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeTiers(tiers: z.infer<typeof looseTierSchema>[] | undefined) {
+  return (tiers ?? [])
+    .map((tier, index) => {
+      const name = deriveTierName(tier);
+      if (!name) {
+        return null;
+      }
+
+      return {
+        name,
+        price:
+          normalizeMoney(tier.price) ??
+          normalizeMoney(tier.amount) ??
+          null,
+        fee: normalizeMoney(tier.fee) ?? null,
+        totalPrice:
+          normalizeMoney(tier.totalPrice) ??
+          normalizeMoney(tier.total) ??
+          null,
+        currency: tier.currency?.trim() || "CLP",
+        sortOrder: tier.sortOrder ?? index,
+        rawText: tier.rawText ?? null,
+      };
+    })
+    .filter(
+      (
+        tier,
+      ): tier is NonNullable<typeof tier> => tier !== null,
+    );
+}
+
+function normalizeAudience(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "adult") {
+    return "adult" as const;
+  }
+  if (normalized === "family") {
+    return "family" as const;
+  }
+  if (normalized === "kids") {
+    return "kids" as const;
+  }
+  if (normalized === "all_ages" || normalized === "all ages") {
+    return "all_ages" as const;
+  }
+  return undefined;
+}
+
+function normalizePatch(
+  patch: z.infer<typeof loosePatchSchema>,
+): LlmEnrichmentPatch {
+  return {
+    title: patch.title,
+    subtitle: patch.subtitle,
+    summary: patch.summary,
+    description: patch.description,
+    venueName: patch.venueName,
+    address: patch.address,
+    categoryPrimary: patch.categoryPrimary
+      ? mapCategory(patch.categoryPrimary)
+      : undefined,
+    categorySecondary: patch.categorySecondary,
+    tags: patch.tags,
+    locationNotes: patch.locationNotes,
+    reviewNotes: patch.reviewNotes,
+    needsReview: patch.needsReview,
+    audience: normalizeAudience(patch.audience),
+    dateText: patch.dateText,
+    qualityScore: patch.qualityScore,
+    tiers: normalizeTiers(patch.tiers),
+  };
+}
+
+async function requestStructuredObject<T>({
+  client,
+  model,
+  system,
+  user,
+  schema,
+  schemaName,
+}: {
+  client: OpenAI;
+  model: string;
+  system: string;
+  user: string;
+  schema: z.ZodType<T>;
+  schemaName: string;
+}): Promise<T> {
+  try {
+    const completion = await client.chat.completions.parse({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: zodResponseFormat(schema, schemaName),
+      temperature: 0.2,
+    });
+
+    const parsed = completion.choices[0]?.message.parsed;
+    if (parsed) {
+      return parsed;
+    }
+  } catch {
+    // Fall through to plain JSON mode.
+  }
+
+  const fallback = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: `${system}\nRespond with a valid JSON object only.` },
+      { role: "user", content: user },
+    ],
+    temperature: 0,
+    response_format: { type: "json_object" },
+  });
+
+  const content = fallback.choices[0]?.message.content;
+  const text = Array.isArray(content)
+    ? content
+        .map((part) => ("text" in part ? part.text : ""))
+        .join("")
+    : (content ?? "");
+  const jsonText = extractJsonObject(text);
+
+  if (!jsonText) {
+    throw new Error(`OpenAI ${schemaName} fallback returned no JSON object`);
+  }
+
+  const data = JSON.parse(jsonText) as unknown;
+  return schema.parse(data);
+}
 
 async function extractPricingTiers(
   client: OpenAI,
@@ -56,24 +280,20 @@ async function extractPricingTiers(
   candidate: EventCandidate,
   pricingText: string,
 ) {
-  const completion = await client.chat.completions.parse({
+  const parsed = await requestStructuredObject({
+    client,
     model,
-    messages: [
-      { role: "system", content: pricingPrompt },
-      {
-        role: "user",
-        content: JSON.stringify({
-          title: candidate.title,
-          source: candidate.source,
-          pricing: pricingText,
-        }),
-      },
-    ],
-    response_format: zodResponseFormat(pricingOnlySchema, "pricing_tiers"),
-    temperature: 0,
+    system: pricingPrompt,
+    user: JSON.stringify({
+      title: candidate.title,
+      source: candidate.source,
+      pricing: pricingText,
+    }),
+    schema: loosePricingOnlySchema,
+    schemaName: "pricing_tiers",
   });
 
-  return completion.choices[0]?.message.parsed?.tiers ?? [];
+  return normalizeTiers(parsed.tiers);
 }
 
 export async function enrichDisambiguateCandidate(
@@ -96,23 +316,17 @@ export async function enrichDisambiguateCandidate(
     snippets: safeSnippets,
   });
 
-  const completion = await client.chat.completions.parse({
+  const parsed = await requestStructuredObject({
+    client,
     model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-    ],
-    response_format: zodResponseFormat(
-      llmEnrichmentPatchSchema,
-      "event_enrichment_patch",
-    ),
-    temperature: 0.2,
+    system: systemPrompt,
+    user: userContent,
+    schema: loosePatchSchema,
+    schemaName: "event_enrichment_patch",
   });
-
-  const parsed = completion.choices[0]?.message.parsed ?? null;
+  const normalizedPatch = llmEnrichmentPatchSchema.parse(normalizePatch(parsed));
   if (
-    parsed &&
-    (!parsed.tiers || parsed.tiers.length === 0) &&
+    (!normalizedPatch.tiers || normalizedPatch.tiers.length === 0) &&
     safeSnippets.pricing?.trim()
   ) {
     const tiers = await extractPricingTiers(
@@ -123,23 +337,11 @@ export async function enrichDisambiguateCandidate(
     );
     if (tiers.length > 0) {
       return {
-        ...parsed,
+        ...normalizedPatch,
         tiers,
       };
     }
   }
 
-  if (!parsed && safeSnippets.pricing?.trim()) {
-    const tiers = await extractPricingTiers(
-      client,
-      model,
-      candidate,
-      safeSnippets.pricing,
-    );
-    if (tiers.length > 0) {
-      return { tiers };
-    }
-  }
-
-  return parsed;
+  return normalizedPatch;
 }

@@ -12,6 +12,7 @@ import { eventCandidateSchema, rawSnippetsSchema } from "./types.js";
 export type FinalizeIngestedEventResult = {
   event: EventCreateInput;
   enrichFailed?: boolean;
+  enrichError?: string;
 };
 
 /**
@@ -37,11 +38,13 @@ export async function finalizeIngestedEvent(
         meta.llmModel = process.env.OPENAI_INGEST_MODEL ?? "gpt-5.4-mini";
         meta.enrichedAt = new Date().toISOString();
       }
-    } catch {
+    } catch (error) {
       merged = candidate;
       return {
         event: normalizeEventFinal(candidate),
         enrichFailed: true,
+        enrichError:
+          error instanceof Error ? error.message : "Unknown enrichment error",
       };
     }
   }

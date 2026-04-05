@@ -5,6 +5,7 @@ import {
   absoluteUrl,
   extractBodyText,
   inferLocation,
+  isPastEvent,
   mapCategory,
   parsePriceRange,
   parseSpanishDateRange,
@@ -139,6 +140,9 @@ export const ingestGam = async ({
           url: item.sourceUrl,
           message: "OpenAI enrichment failed; stored parser-only fields",
         });
+      }
+      if (isPastEvent(event)) {
+        continue;
       }
       events.push(event);
     } catch (error) {

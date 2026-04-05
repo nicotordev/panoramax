@@ -5,6 +5,7 @@ import {
   absoluteUrl,
   extractBodyText,
   inferLocation,
+  isPastEvent,
   mapAudience,
   mapCategory,
   normalizeVenueName,
@@ -186,7 +187,7 @@ export const ingestTicketplus = async ({
         pricing: priceText ?? undefined,
       };
 
-      const { event, enrichFailed } = await finalizeIngestedEvent(
+      const { event, enrichFailed, enrichError } = await finalizeIngestedEvent(
         candidate,
         snippets,
         { enrichWithLlm },
@@ -195,9 +196,16 @@ export const ingestTicketplus = async ({
         errors.push({
           stage: "enrich",
           url: sourceUrl,
-          message: "OpenAI enrichment failed; stored parser-only fields",
+          message:
+            enrichError ??
+            "OpenAI enrichment failed; stored parser-only fields",
         });
       }
+
+      if (isPastEvent(event)) {
+        continue;
+      }
+
       events.push(event);
 
       if (events.length >= requestedLimit) {
