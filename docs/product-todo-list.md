@@ -14,8 +14,8 @@ Lista accionable derivada de [`strategy/05-product-roadmap.md`](./strategy/05-pr
 
 ### Pipeline simple de ingesta
 
-- [ ] Elegir las primeras fuentes a integrar.
-- [ ] Definir esquema unificado de datos para eventos.
+- [x] Elegir las primeras fuentes a integrar.
+- [x] Definir esquema unificado de datos para eventos.
 - [ ] Implementar primer flujo de extracción desde fuentes públicas.
 - [ ] Normalizar fechas, comunas, categorías y precios.
 - [ ] Guardar URL canónica y metadata mínima por evento.

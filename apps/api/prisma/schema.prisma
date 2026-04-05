@@ -10,3 +10,117 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum SourceType {
+  editorial
+  venue
+  ticketing
+  organizer
+}
+
+enum EventStatus {
+  scheduled
+  cancelled
+  postponed
+  sold_out
+  expired
+  draft
+}
+
+enum Audience {
+  adult
+  family
+  kids
+  all_ages
+}
+
+enum CategoryPrimary {
+  music
+  theatre
+  standup
+  dance
+  festival
+  fair
+  exhibition
+  food_drink
+  family
+  sports
+  workshop
+  special_experience
+}
+
+model Event {
+  id               String           @id @default(uuid()) @db.Uuid
+  source           String
+  sourceType       SourceType       @map("source_type")
+  sourceEventId    String?          @map("source_event_id")
+  sourceUrl        String           @map("source_url")
+  ticketUrl        String?          @map("ticket_url")
+  importedAt       DateTime         @default(now()) @map("imported_at") @db.Timestamptz(6)
+  lastSeenAt       DateTime         @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  rawTitle         String?          @map("raw_title")
+  rawPayload       Json?            @map("raw_payload")
+
+  title            String
+  subtitle         String?
+  summary          String?
+  description      String?
+  language         String?          @default("es")
+  imageUrl         String?          @map("image_url")
+  imageAttribution String?          @map("image_attribution")
+
+  startAt          DateTime         @map("start_at") @db.Timestamptz(6)
+  endAt            DateTime?        @map("end_at") @db.Timestamptz(6)
+  timezone         String           @default("America/Santiago")
+  allDay           Boolean          @default(false) @map("all_day")
+  dateText         String?          @map("date_text")
+  status           EventStatus      @default(scheduled)
+
+  venueName        String           @map("venue_name")
+  venueRaw         String?          @map("venue_raw")
+  address          String?
+  commune          String
+  city             String
+  region           String?
+  country          String           @default("CL")
+  latitude         Decimal?         @db.Decimal(10, 7)
+  longitude        Decimal?         @db.Decimal(10, 7)
+  isOnline         Boolean          @default(false) @map("is_online")
+  locationNotes    String?          @map("location_notes")
+
+  isFree           Boolean          @default(false) @map("is_free")
+  priceMin         Decimal?         @map("price_min") @db.Decimal(12, 2)
+  priceMax         Decimal?         @map("price_max") @db.Decimal(12, 2)
+  currency         String           @default("CLP")
+  priceText        String?          @map("price_text")
+  availabilityText String?          @map("availability_text")
+
+  categoryPrimary  CategoryPrimary  @map("category_primary")
+  categorySecondary String?         @map("category_secondary")
+  categoriesSource String[]         @default([]) @map("categories_source")
+  tags             String[]         @default([])
+  audience         Audience?
+  editorialLabels  String[]         @default([]) @map("editorial_labels")
+
+  dedupeKey        String?          @map("dedupe_key")
+  canonicalEventId String?          @map("canonical_event_id") @db.Uuid
+  qualityScore     Int?             @default(0) @map("quality_score")
+  needsReview      Boolean          @default(false) @map("needs_review")
+  reviewNotes      String?          @map("review_notes")
+
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  canonicalEvent   Event?           @relation("CanonicalEvent", fields: [canonicalEventId], references: [id], onDelete: SetNull)
+  duplicateEvents  Event[]          @relation("CanonicalEvent")
+
+  @@unique([source, sourceUrl], map: "events_source_source_url_key")
+  @@unique([source, sourceEventId], map: "events_source_source_event_id_key")
+  @@index([status, startAt], map: "events_status_start_at_idx")
+  @@index([city, commune, startAt], map: "events_city_commune_start_at_idx")
+  @@index([categoryPrimary, startAt], map: "events_category_primary_start_at_idx")
+  @@index([venueName, startAt], map: "events_venue_name_start_at_idx")
+  @@index([dedupeKey], map: "events_dedupe_key_idx")
+  @@index([canonicalEventId], map: "events_canonical_event_id_idx")
+  @@map("events")
+}
