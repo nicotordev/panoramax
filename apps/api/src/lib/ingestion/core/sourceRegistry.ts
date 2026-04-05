@@ -1,8 +1,5 @@
-import {
-  ingestChileCultura,
-  type IngestChileCulturaOptions,
-} from "../sources/chileCultura.js";
 import { ingestAgendaMusical } from "../sources/agendaMusical.js";
+import { ingestChileCultura } from "../sources/chileCultura.js";
 import { ingestGam } from "../sources/gam.js";
 import { ingestPuntoticket } from "../sources/puntoticket.js";
 import { ingestTicketplus } from "../sources/ticketplus.js";
@@ -16,8 +13,8 @@ export type SourceKey =
   | "puntoticket";
 
 type SourceIngestFn = (
-  options?: IngestSourceOptions | IngestChileCulturaOptions,
-) => Promise<IngestionResult | Awaited<ReturnType<typeof ingestChileCultura>>>;
+  options?: IngestSourceOptions,
+) => Promise<IngestionResult>;
 
 export const sourceRegistry = {
   "chile-cultura": ingestChileCultura,

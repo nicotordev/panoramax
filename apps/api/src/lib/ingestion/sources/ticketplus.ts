@@ -3,7 +3,6 @@ import { SourceType } from "../../../generated/prisma/enums.js";
 import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
-  defaultEvent,
   extractBodyText,
   inferLocation,
   mapAudience,
@@ -12,16 +11,19 @@ import {
   parsePriceRange,
   parseSpanishDateRange,
   slugFromUrl,
+  upsertEvent,
+  type IngestSourceOptions,
   type IngestionError,
   type IngestionResult,
-  type IngestSourceOptions,
-  upsertEvent,
 } from "../core/shared.js";
+import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
 export const ingestTicketplus = async ({
   page = 1,
   limit,
   persist = false,
+  enrichWithLlm,
 }: IngestSourceOptions = {}) => {
   const baseUrl = "https://ticketplus.cl";
   const listingUrl = absoluteUrl(baseUrl, "/states/region-metropolitana");
@@ -76,7 +78,9 @@ export const ingestTicketplus = async ({
         text.match(/\b(Teatro|Deportes|Fiestas|Música|Familia)\b/i)?.[0] ??
         "Especiales";
       const dateText =
-        h2Texts.find((value) => /^event\b/i.test(value))?.replace(/^event\s*/i, "") ??
+        h2Texts
+          .find((value) => /^event\b/i.test(value))
+          ?.replace(/^event\s*/i, "") ??
         h2Texts.find((value) => /\d{1,2}.*20\d{2}/i.test(value)) ??
         introText?.match(
           /(?:lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\s+\d{1,2}\s+al\s+(?:lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2}/i,
@@ -85,14 +89,18 @@ export const ingestTicketplus = async ({
       const dateInfo = parseSpanishDateRange(dateText ?? text);
       const venueName =
         normalizeVenueName(
-          h2Texts.find((value) => /^business\b/i.test(value))?.replace(/^business\s*/i, "") ??
+          h2Texts
+            .find((value) => /^business\b/i.test(value))
+            ?.replace(/^business\s*/i, "") ??
             h4Texts.find((value) =>
               /\/|teatro|arena|club|estadio|matucana/i.test(value),
             ) ??
             "Venue sin informar",
         ) ?? "Venue sin informar";
       const address =
-        h2Texts.find((value) => /^place\b/i.test(value))?.replace(/^place\s*/i, "") ??
+        h2Texts
+          .find((value) => /^place\b/i.test(value))
+          ?.replace(/^place\s*/i, "") ??
         h2Texts.find((value) => value.includes("Chile") && value !== title) ??
         null;
       const location = inferLocation(address ?? venueName);
@@ -124,39 +132,57 @@ export const ingestTicketplus = async ({
         continue;
       }
 
-      events.push(
-        defaultEvent({
-          source: "ticketplus",
-          sourceType: SourceType.ticketing,
-          sourceEventId: slugFromUrl(sourceUrl),
-          sourceUrl,
-          ticketUrl: sourceUrl,
-          title,
-          description,
-          imageUrl,
-          dateText,
-          startAt: dateInfo.startAt,
-          endAt: dateInfo.endAt,
-          allDay: dateInfo.allDay,
-          venueName,
-          address,
-          commune: location.commune,
-          city: location.city,
-          region: location.region,
-          isFree: pricing.isFree,
-          priceText,
-          priceMin: pricing.priceMin,
-          priceMax: pricing.priceMax,
-          categoryPrimary: mapCategory(categoryText),
-          categoriesSource: [categoryText],
-          tags: ["ticketplus", "ticketing"],
-          audience,
-          rawPayload: {
-            detailText: text.slice(0, 5000),
-          },
-          qualityScore: 88,
-        }),
+      const candidate: EventCandidate = {
+        source: "ticketplus",
+        sourceType: SourceType.ticketing,
+        sourceUrl,
+        sourceEventId: slugFromUrl(sourceUrl),
+        ticketUrl: sourceUrl,
+        title,
+        description,
+        imageUrl,
+        dateText,
+        startAtIso: dateInfo.startAt.toISOString(),
+        endAtIso: dateInfo.endAt?.toISOString() ?? null,
+        allDay: dateInfo.allDay,
+        venueName,
+        address,
+        commune: location.commune,
+        city: location.city,
+        region: location.region,
+        isFree: pricing.isFree,
+        priceText,
+        priceMin: pricing.priceMin,
+        priceMax: pricing.priceMax,
+        categoryText,
+        categoryPrimary: mapCategory(categoryText),
+        categoriesSource: [categoryText],
+        tags: ["ticketplus", "ticketing"],
+        audience,
+        parserPayload: {
+          detailText: text.slice(0, 5000),
+        },
+        qualityScore: 88,
+      };
+
+      const snippets: RawSnippets = {
+        detail: text.slice(0, 8000),
+        pricing: priceText ?? undefined,
+      };
+
+      const { event, enrichFailed } = await finalizeIngestedEvent(
+        candidate,
+        snippets,
+        { enrichWithLlm },
       );
+      if (enrichFailed) {
+        errors.push({
+          stage: "enrich",
+          url: sourceUrl,
+          message: "OpenAI enrichment failed; stored parser-only fields",
+        });
+      }
+      events.push(event);
 
       if (events.length >= requestedLimit) {
         break;

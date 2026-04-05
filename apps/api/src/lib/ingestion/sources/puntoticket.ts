@@ -3,7 +3,6 @@ import { SourceType } from "../../../generated/prisma/enums.js";
 import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
-  defaultEvent,
   extractBodyText,
   inferLocation,
   mapAudience,
@@ -12,16 +11,19 @@ import {
   parsePriceRange,
   parseSpanishDateRange,
   slugFromUrl,
+  upsertEvent,
+  type IngestSourceOptions,
   type IngestionError,
   type IngestionResult,
-  type IngestSourceOptions,
-  upsertEvent,
 } from "../core/shared.js";
+import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
 export const ingestPuntoticket = async ({
   page = 1,
   limit,
   persist = false,
+  enrichWithLlm,
 }: IngestSourceOptions = {}) => {
   const baseUrl = "https://www.puntoticket.com";
   const listingUrl = absoluteUrl(baseUrl, "/todos");
@@ -99,17 +101,21 @@ export const ingestPuntoticket = async ({
         )?.[1] ??
         text.match(/([A-ZÁÉÍÓÚ0-9' .-]+)\s+\d{2}-\d{2}-20\d{2}/i)?.[1] ??
         "Venue sin informar";
-      const venueName = normalizeVenueName(venueLine.trim()) ?? venueLine.trim();
+      const venueName =
+        normalizeVenueName(venueLine.trim()) ?? venueLine.trim();
       const address = venueName;
       const location = inferLocation(address);
       const priceText =
-        text.match(/Sector Precio[^]+?Precio total incluye cargo por servicio\./i)?.[0] ??
+        text.match(
+          /Sector Precio[^]+?Precio total incluye cargo por servicio\./i,
+        )?.[0] ??
         text.match(/\$\s*[\d.]+(?:[^$]{0,120}\$\s*[\d.]+){0,6}/)?.[0] ??
         null;
       const pricing = parsePriceRange(priceText);
       const description =
-        text.match(/EVENTO[^]+?PRODUCE:[^]+?(?:COMPRA TU ENTRADA|Nuestro sitio web utiliza cookies)/i)?.[0] ??
-        text.slice(0, 1800);
+        text.match(
+          /EVENTO[^]+?PRODUCE:[^]+?(?:COMPRA TU ENTRADA|Nuestro sitio web utiliza cookies)/i,
+        )?.[0] ?? text.slice(0, 1800);
       const imageUrl =
         $$('meta[property="og:image"]').attr("content") ??
         $$("img")
@@ -128,39 +134,57 @@ export const ingestPuntoticket = async ({
         continue;
       }
 
-      events.push(
-        defaultEvent({
-          source: "puntoticket",
-          sourceType: SourceType.ticketing,
-          sourceEventId: slugFromUrl(sourceUrl),
-          sourceUrl,
-          ticketUrl: sourceUrl,
-          title,
-          description,
-          imageUrl,
-          dateText,
-          startAt: dateInfo.startAt,
-          endAt: dateInfo.endAt,
-          allDay: dateInfo.allDay,
-          venueName,
-          address,
-          commune: location.commune,
-          city: location.city,
-          region: location.region,
-          isFree: pricing.isFree,
-          priceText,
-          priceMin: pricing.priceMin,
-          priceMax: pricing.priceMax,
-          categoryPrimary: mapCategory(categoryText),
-          categoriesSource: [categoryText],
-          tags: ["puntoticket", "ticketing"],
-          audience,
-          rawPayload: {
-            detailText: text.slice(0, 5000),
-          },
-          qualityScore: 86,
-        }),
+      const candidate: EventCandidate = {
+        source: "puntoticket",
+        sourceType: SourceType.ticketing,
+        sourceUrl,
+        sourceEventId: slugFromUrl(sourceUrl),
+        ticketUrl: sourceUrl,
+        title,
+        description,
+        imageUrl,
+        dateText,
+        startAtIso: dateInfo.startAt.toISOString(),
+        endAtIso: dateInfo.endAt?.toISOString() ?? null,
+        allDay: dateInfo.allDay,
+        venueName,
+        address,
+        commune: location.commune,
+        city: location.city,
+        region: location.region,
+        isFree: pricing.isFree,
+        priceText,
+        priceMin: pricing.priceMin,
+        priceMax: pricing.priceMax,
+        categoryText,
+        categoryPrimary: mapCategory(categoryText),
+        categoriesSource: [categoryText],
+        tags: ["puntoticket", "ticketing"],
+        audience,
+        parserPayload: {
+          detailText: text.slice(0, 5000),
+        },
+        qualityScore: 86,
+      };
+
+      const snippets: RawSnippets = {
+        detail: text.slice(0, 8000),
+        pricing: priceText ?? undefined,
+      };
+
+      const { event, enrichFailed } = await finalizeIngestedEvent(
+        candidate,
+        snippets,
+        { enrichWithLlm },
       );
+      if (enrichFailed) {
+        errors.push({
+          stage: "enrich",
+          url: sourceUrl,
+          message: "OpenAI enrichment failed; stored parser-only fields",
+        });
+      }
+      events.push(event);
 
       if (events.length >= requestedLimit) {
         break;
@@ -169,7 +193,8 @@ export const ingestPuntoticket = async ({
       errors.push({
         stage: "detail",
         url: sourceUrl,
-        message: error instanceof Error ? error.message : "Unknown detail error",
+        message:
+          error instanceof Error ? error.message : "Unknown detail error",
       });
     }
   }
@@ -183,7 +208,9 @@ export const ingestPuntoticket = async ({
           stage: "persist",
           url: event.sourceUrl,
           message:
-            error instanceof Error ? error.message : "Unknown persistence error",
+            error instanceof Error
+              ? error.message
+              : "Unknown persistence error",
         });
       }
     }

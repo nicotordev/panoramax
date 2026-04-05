@@ -38,7 +38,7 @@ try {
     results.push({
       source: result.source,
       count: result.count,
-      processed: "processed" in result ? result.processed : result.count,
+      processed: result.events.length,
       persisted: result.persisted,
       errors: "errors" in result ? result.errors.length : 0,
     });

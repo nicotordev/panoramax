@@ -12,6 +12,7 @@
     "ingest:ticketplus": "tsx src/scripts/ingest-source.ts ticketplus",
     "ingest:puntoticket": "tsx src/scripts/ingest-source.ts puntoticket",
     "ingest:sources": "tsx src/scripts/ingest-sources.ts",
+    "smoke:ingest": "tsx src/scripts/smoke-ingest.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "prisma:generate": "prisma generate",
     "prisma:db:pull": "prisma db pull",
@@ -27,6 +28,7 @@
     "cheerio": "^1.2.0",
     "dotenv": "^16.6.1",
     "hono": "^4.12.10",
+    "openai": "^6.33.0",
     "pg": "^8.20.0",
     "zod": "^4.3.6"
   },

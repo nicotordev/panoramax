@@ -12,12 +12,20 @@ export type IngestSourceOptions = {
   page?: number;
   limit?: number;
   persist?: boolean;
+  /** Only `chile-cultura` reads this; other sources ignore it. */
+  region?: string;
+  /**
+   * When `true`, run OpenAI enrichment if `OPENAI_API_KEY` is set.
+   * When `false`, skip. When omitted, use `INGEST_ENRICH_WITH_OPENAI=true` and API key.
+   */
+  enrichWithLlm?: boolean;
 };
 
 export type IngestionErrorStage =
   | "listing"
   | "detail"
   | "normalize"
+  | "enrich"
   | "persist";
 
 export type IngestionError = {
@@ -36,6 +44,8 @@ export type IngestionResult = {
   persisted: boolean;
   errors: IngestionError[];
   events: EventCreateInput[];
+  /** Present for region-scraped sources (e.g. Chile Cultura). */
+  region?: string;
 };
 
 type DateRangeResult = {
@@ -467,6 +477,8 @@ export const defaultEvent = ({
   sourceUrl,
   sourceEventId,
   title,
+  rawTitle: rawTitleInput,
+  subtitle,
   description,
   summary,
   imageUrl,
@@ -485,6 +497,7 @@ export const defaultEvent = ({
   priceMin,
   priceMax,
   categoryPrimary,
+  categorySecondary,
   categoriesSource,
   tags,
   audience,
@@ -493,12 +506,15 @@ export const defaultEvent = ({
   qualityScore,
   needsReview,
   reviewNotes,
+  locationNotes,
 }: {
   source: string;
   sourceType: SourceType;
   sourceUrl: string;
   sourceEventId?: string | null;
   title: string;
+  rawTitle?: string | null;
+  subtitle?: string | null;
   description?: string | null;
   summary?: string | null;
   imageUrl?: string | null;
@@ -517,6 +533,7 @@ export const defaultEvent = ({
   priceMin?: number | null;
   priceMax?: number | null;
   categoryPrimary: CategoryPrimary;
+  categorySecondary?: string | null;
   categoriesSource?: string[];
   tags?: string[];
   audience?: Audience | null;
@@ -525,6 +542,7 @@ export const defaultEvent = ({
   qualityScore?: number;
   needsReview?: boolean;
   reviewNotes?: string | null;
+  locationNotes?: string | null;
 }) => {
   const canonicalVenueName = normalizeVenueName(venueName) ?? venueName;
   const derivedNeedsReview = needsReview ?? false;
@@ -535,9 +553,10 @@ export const defaultEvent = ({
     sourceEventId: sourceEventId ?? null,
     sourceUrl,
     ticketUrl: ticketUrl ?? null,
-    rawTitle: title,
+    rawTitle: rawTitleInput ?? title,
     rawPayload,
     title,
+    subtitle: subtitle ?? null,
     summary: summary ?? inferSummary(description ?? null),
     description: description ?? null,
     imageUrl: imageUrl ?? null,
@@ -559,7 +578,7 @@ export const defaultEvent = ({
     currency: "CLP",
     priceText: priceText ?? null,
     categoryPrimary,
-    categorySecondary: null,
+    categorySecondary: categorySecondary ?? null,
     categoriesSource: categoriesSource ?? [],
     tags: tags ?? [],
     audience: audience ?? null,
@@ -572,6 +591,7 @@ export const defaultEvent = ({
     qualityScore: qualityScore ?? 70,
     needsReview: derivedNeedsReview,
     reviewNotes: reviewNotes ?? null,
+    locationNotes: locationNotes ?? null,
   };
 };
 

@@ -3,8 +3,17 @@ import {
   CategoryPrimary,
   SourceType,
 } from "../../../generated/prisma/enums.js";
+import type { EventCreateInput } from "../../../generated/prisma/models/Event.js";
 import { scrapeHtml } from "../../brightdata.js";
-import { prisma } from "../../prisma.js";
+import type {
+  IngestSourceOptions,
+  IngestionError,
+  IngestionResult,
+} from "../core/shared.js";
+import { upsertEvent } from "../core/shared.js";
+import { parseChileCulturaStartAt } from "../pipeline/chileDate.js";
+import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
 type ChileCulturaListingItem = {
   sourceEventId: string;
@@ -30,12 +39,7 @@ type ChileCulturaDetail = {
   description: string | null;
 };
 
-export type IngestChileCulturaOptions = {
-  region?: string;
-  page?: number;
-  limit?: number;
-  persist?: boolean;
-};
+export type IngestChileCulturaOptions = IngestSourceOptions;
 
 export class ChileCulturaIngestor {
   private readonly baseUrl = "https://chilecultura.gob.cl";
@@ -253,75 +257,6 @@ export class ChileCulturaIngestor {
     return firstSentence?.slice(0, 280) ?? description.slice(0, 280);
   }
 
-  private parseStartAt(dateText: string, timeText: string | null) {
-    const match = dateText
-      .toLowerCase()
-      .match(/(?<day>\d{1,2})\s+(?<month>[a-záéíóú]+)/i);
-
-    if (!match?.groups) {
-      return new Date();
-    }
-
-    const monthMap: Record<string, number> = {
-      ene: 0,
-      enero: 0,
-      feb: 1,
-      febrero: 1,
-      mar: 2,
-      marzo: 2,
-      abr: 3,
-      abril: 3,
-      may: 4,
-      mayo: 4,
-      jun: 5,
-      junio: 5,
-      jul: 6,
-      julio: 6,
-      ago: 7,
-      agosto: 7,
-      sep: 8,
-      sept: 8,
-      septiembre: 8,
-      oct: 9,
-      octubre: 9,
-      nov: 10,
-      noviembre: 10,
-      dic: 11,
-      diciembre: 11,
-    };
-
-    const year = new Date().getFullYear();
-    const month = monthMap[match.groups.month];
-    const day = Number(match.groups.day);
-
-    const timeMatch = timeText?.match(/(?<hours>\d{1,2}):(?<minutes>\d{2})/);
-    const hours = timeMatch?.groups?.hours ?? "00";
-    const minutes = timeMatch?.groups?.minutes ?? "00";
-
-    const parsedDate = new Date(
-      Date.UTC(year, month ?? 0, day, Number(hours) + 3, Number(minutes)),
-    );
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return new Date();
-    }
-
-    return parsedDate;
-  }
-
-  private buildDedupeKey(title: string, venueName: string, startAt: Date) {
-    return [title, venueName, startAt.toISOString().slice(0, 10)]
-      .map((part) =>
-        part
-          .normalize("NFD")
-          .replace(/\p{Diacritic}/gu, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, ""),
-      )
-      .join("__");
-  }
-
   private matchesRegion(
     requestedRegion: string | undefined,
     listingItem: ChileCulturaListingItem,
@@ -341,11 +276,14 @@ export class ChileCulturaIngestor {
     return haystack.includes(expectedRegionName.toLowerCase());
   }
 
-  private normalizeEvent(
+  private buildEventCandidate(
     listingItem: ChileCulturaListingItem,
     detail: ChileCulturaDetail,
-  ) {
-    const startAt = this.parseStartAt(listingItem.dateText, detail.timeText);
+  ): { candidate: EventCandidate; snippets: RawSnippets } {
+    const startAt = parseChileCulturaStartAt(
+      listingItem.dateText,
+      detail.timeText,
+    );
     const venueName = detail.venueName ?? listingItem.location;
     const city =
       detail.region?.includes("Metropolitana") ||
@@ -354,24 +292,19 @@ export class ChileCulturaIngestor {
         : "Sin ciudad informada";
     const commune = this.unknownCommune;
 
-    return {
+    const candidate: EventCandidate = {
       source: "chile_cultura",
       sourceType: SourceType.editorial,
-      sourceEventId: listingItem.sourceEventId,
       sourceUrl: listingItem.sourceUrl,
+      sourceEventId: listingItem.sourceEventId,
       ticketUrl: detail.externalUrl,
       rawTitle: listingItem.title,
-      rawPayload: {
-        listing: listingItem,
-        detail,
-      },
       title: detail.title,
       summary: this.inferSummary(detail.description),
       description: detail.description,
       imageUrl: listingItem.imageUrl,
-      startAt,
-      timezone: "America/Santiago",
       dateText: listingItem.dateText,
+      startAtIso: startAt.toISOString(),
       venueName,
       venueRaw: venueName,
       address: detail.address,
@@ -380,37 +313,40 @@ export class ChileCulturaIngestor {
       region: detail.region,
       isFree: listingItem.isFree,
       categoryPrimary: this.mapCategory(listingItem.categoryText),
-      categorySecondary: null,
+      categoryText: listingItem.categoryText,
       categoriesSource: [listingItem.categoryText],
       tags: detail.organizer ? [detail.organizer] : [],
       audience: this.mapAudience(detail.audienceText),
-      editorialLabels: listingItem.isFree ? ["gratis"] : [],
-      dedupeKey: this.buildDedupeKey(detail.title, venueName, startAt),
+      audienceText: detail.audienceText,
       qualityScore: detail.description ? 80 : 60,
       needsReview: detail.region === null || detail.venueName === null,
       reviewNotes:
         detail.region === null || detail.venueName === null
           ? "Completar ubicación o venue desde fuente manual"
           : null,
+      parserPayload: {
+        listing: listingItem,
+        detail,
+      },
     };
-  }
 
-  private async upsertEvent(
-    event: ReturnType<ChileCulturaIngestor["normalizeEvent"]>,
-  ) {
-    return prisma.event.upsert({
-      where: {
-        source_sourceUrl: {
-          source: event.source,
-          sourceUrl: event.sourceUrl,
-        },
+    const detailSnip = [
+      detail.description,
+      detail.locationDetails.join(" "),
+      venueName,
+      listingItem.location,
+      detail.region,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      candidate,
+      snippets: {
+        listing: `${listingItem.title} ${listingItem.location} ${listingItem.dateText} ${listingItem.categoryText}`,
+        detail: detailSnip.slice(0, 8000),
       },
-      create: event,
-      update: {
-        ...event,
-        lastSeenAt: new Date(),
-      },
-    });
+    };
   }
 
   async ingest({
@@ -418,10 +354,12 @@ export class ChileCulturaIngestor {
     page = 1,
     limit,
     persist = false,
+    enrichWithLlm,
   }: IngestChileCulturaOptions = {}) {
     const listingUrl = this.buildListingUrl(region, page);
     const listingHtml = await scrapeHtml(listingUrl);
     const listingItems = this.parseListingPage(listingHtml);
+    const errors: IngestionError[] = [];
 
     const detailPages = await Promise.all(
       (region ? listingItems : listingItems.slice(0, limit)).map(
@@ -436,19 +374,35 @@ export class ChileCulturaIngestor {
       ),
     );
 
-    const normalizedEvents = detailPages
-      .filter(({ listingItem, detail }) =>
-        this.matchesRegion(region, listingItem, detail),
-      )
-      .map(({ listingItem, detail }) =>
-        this.normalizeEvent(listingItem, detail),
-      )
-      .slice(0, limit);
+    const filtered = detailPages.filter(({ listingItem, detail }) =>
+      this.matchesRegion(region, listingItem, detail),
+    );
+    const capped = filtered.slice(0, limit);
+
+    const normalizedEvents: EventCreateInput[] = [];
+
+    for (const { listingItem, detail } of capped) {
+      const { candidate, snippets } = this.buildEventCandidate(
+        listingItem,
+        detail,
+      );
+      const { event, enrichFailed } = await finalizeIngestedEvent(
+        candidate,
+        snippets,
+        { enrichWithLlm },
+      );
+      if (enrichFailed) {
+        errors.push({
+          stage: "enrich",
+          url: candidate.sourceUrl,
+          message: "OpenAI enrichment failed; stored parser-only fields",
+        });
+      }
+      normalizedEvents.push(event);
+    }
 
     if (persist) {
-      await Promise.all(
-        normalizedEvents.map((event) => this.upsertEvent(event)),
-      );
+      await Promise.all(normalizedEvents.map((event) => upsertEvent(event)));
     }
 
     return {
@@ -457,9 +411,12 @@ export class ChileCulturaIngestor {
       page,
       listingUrl,
       count: normalizedEvents.length,
+      processed: detailPages.length,
+      skipped: Math.max(detailPages.length - normalizedEvents.length, 0),
       persisted: persist,
+      errors,
       events: normalizedEvents,
-    };
+    } satisfies IngestionResult;
   }
 }
 

@@ -25,5 +25,18 @@
       "**/dist/**": true,
       "**/.next/**": true,
     },
+    "sqltools.connections": [
+      {
+        "ssh": "Disabled",
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "database": "panoramax",
+        "username": "postgres",
+        "password": "postgres",
+        "name": "panoramax",
+      },
+    ],
   },
 }

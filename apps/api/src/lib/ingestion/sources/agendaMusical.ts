@@ -3,18 +3,19 @@ import { SourceType } from "../../../generated/prisma/enums.js";
 import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
-  defaultEvent,
   extractBodyText,
   inferLocation,
   mapCategory,
   normalizeVenueName,
   parseSpanishDateRange,
   slugFromUrl,
+  upsertEvent,
+  type IngestSourceOptions,
   type IngestionError,
   type IngestionResult,
-  type IngestSourceOptions,
-  upsertEvent,
 } from "../core/shared.js";
+import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
 const isPotentialEventArticle = (title: string, text: string) =>
   /chile|concierto|show|festival|tour|lollapalooza|movistar|teatro|arena/i.test(
@@ -25,6 +26,7 @@ export const ingestAgendaMusical = async ({
   page = 1,
   limit,
   persist = false,
+  enrichWithLlm,
 }: IngestSourceOptions = {}) => {
   const baseUrl = "https://www.agendamusical.cl";
   const listingUrl =
@@ -100,37 +102,56 @@ export const ingestAgendaMusical = async ({
         $$('meta[property="og:image"]').attr("content") ??
         $$("img").first().attr("src") ??
         null;
+      const categoryText = title;
 
-      events.push(
-        defaultEvent({
-          source: "agenda_musical",
-          sourceType: SourceType.editorial,
-          sourceEventId: slugFromUrl(item.sourceUrl),
-          sourceUrl: item.sourceUrl,
-          title,
-          description,
-          imageUrl,
-          dateText: dateMatch[0],
-          startAt: dateInfo.startAt,
-          endAt: dateInfo.endAt,
-          allDay: dateInfo.allDay,
-          venueName,
-          address: venueName,
-          commune: location.commune,
-          city: location.city,
-          region: location.region,
-          categoryPrimary: mapCategory(title),
-          categoriesSource: ["agenda_musical"],
-          tags: ["agenda-musical", "editorial"],
-          rawPayload: {
-            detailText: text.slice(0, 5000),
-          },
-          qualityScore: 62,
-          needsReview: true,
-          reviewNotes:
-            "Fuente editorial: revisar venue, precios y ticket URL antes de usar como evento canónico",
-        }),
+      const candidate: EventCandidate = {
+        source: "agenda_musical",
+        sourceType: SourceType.editorial,
+        sourceUrl: item.sourceUrl,
+        sourceEventId: slugFromUrl(item.sourceUrl),
+        title,
+        description,
+        imageUrl,
+        dateText: dateMatch[0],
+        startAtIso: dateInfo.startAt.toISOString(),
+        endAtIso: dateInfo.endAt?.toISOString() ?? null,
+        allDay: dateInfo.allDay,
+        venueName,
+        address: venueName,
+        commune: location.commune,
+        city: location.city,
+        region: location.region,
+        categoryText,
+        categoryPrimary: mapCategory(title),
+        categoriesSource: ["agenda_musical"],
+        tags: ["agenda-musical", "editorial"],
+        parserPayload: {
+          detailText: text.slice(0, 5000),
+        },
+        qualityScore: 62,
+        needsReview: true,
+        reviewNotes:
+          "Fuente editorial: revisar venue, precios y ticket URL antes de usar como evento canónico",
+      };
+
+      const snippets: RawSnippets = {
+        detail: text.slice(0, 8000),
+        listing: item.title,
+      };
+
+      const { event, enrichFailed } = await finalizeIngestedEvent(
+        candidate,
+        snippets,
+        { enrichWithLlm },
       );
+      if (enrichFailed) {
+        errors.push({
+          stage: "enrich",
+          url: item.sourceUrl,
+          message: "OpenAI enrichment failed; stored parser-only fields",
+        });
+      }
+      events.push(event);
     } catch (error) {
       errors.push({
         stage: "detail",

@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { closeBrightDataClient } from "../lib/brightdata.js";
-import { sourceRegistry, type SourceKey } from "../lib/ingestion/core/sourceRegistry.js";
+import {
+  sourceRegistry,
+  type SourceKey,
+} from "../lib/ingestion/core/sourceRegistry.js";
 
 const source = process.argv[2] as SourceKey | undefined;
 
@@ -31,8 +34,8 @@ try {
       {
         source: result.source,
         page,
-        count: result.count,
-        processed: "processed" in result ? result.processed : result.count,
+        count: result.events.length,
+        processed: result.events.length,
         persisted: result.persisted,
         errors: "errors" in result ? result.errors.length : 0,
       },
