@@ -1,13 +1,15 @@
 import type { Env, Schema } from "hono";
 import { Hono } from "hono";
+import { apiAccess } from "../../constants/api-access.js";
 import sourcesController from "../../controllers/sources.controller.js";
+import { requireApiKey } from "../../middleware/require-api-key.js";
 
 const sourcesRoutes = new Hono<Env, Schema, "/sources">();
 
-sourcesRoutes.get("/", sourcesController.getSources);
+sourcesRoutes.get("/", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getSources);
 
-sourcesRoutes.get('/all', sourcesController.getAllSourcesEvents);
+sourcesRoutes.get("/all", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getAllSourcesEvents);
 
-sourcesRoutes.get("/:sourceKey/events", sourcesController.getSourceEvents);
+sourcesRoutes.get("/:sourceKey/events", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getSourceEvents);
 
 export default sourcesRoutes;

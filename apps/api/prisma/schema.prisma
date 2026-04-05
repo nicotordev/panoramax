@@ -124,3 +124,20 @@ model Event {
   @@index([canonicalEventId], map: "events_canonical_event_id_idx")
   @@map("events")
 }
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  keyPrefix   String    @unique @map("key_prefix")
+  keyHash     String    @unique @map("key_hash")
+  scopes      String[]  @default([])
+  isActive    Boolean   @default(true) @map("is_active")
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz(6)
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive, expiresAt], map: "api_keys_is_active_expires_at_idx")
+  @@map("api_keys")
+}

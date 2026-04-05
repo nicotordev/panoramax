@@ -1,10 +1,13 @@
 import type { Env, Schema } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { httpSecurity } from "./middleware/http-security.js";
 import v1Routes from "./routes/v1/index.routes.js";
 import responseEnhancer from "./utils/response-enhancer.js";
 
 const app = new Hono<Env, Schema, "/">();
+
+app.use("*", ...httpSecurity);
 
 app.route("/v1", v1Routes);
 
