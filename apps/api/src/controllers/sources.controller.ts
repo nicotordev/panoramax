@@ -20,6 +20,19 @@ const getSourceEventsParamsSchema = z.object({
     .optional(),
 });
 
+const getAllSourcesEventsQuerySchema = z.object({
+  page: z
+    .string()
+    .regex(/^\d+$/)
+    .transform((val) => Number(val))
+    .optional(),
+  limit: z
+    .string()
+    .regex(/^\d+$/)
+    .transform((val) => Number(val))
+    .optional(),
+});
+
 class SourcesController {
   public async getSources(c: Context) {
     try {
@@ -75,6 +88,42 @@ class SourcesController {
       const body = responseEnhancer.errorHandler(
         error,
         "Failed to get source events",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    }
+  }
+
+  public async getAllSourcesEvents(
+    c: Context<Env, "/all", { in: { page: number; limit: number } }>,
+  ) {
+    try {
+      // Use zod only for parsing query
+      const parse = getAllSourcesEventsQuerySchema.safeParse({
+        page: c.req.query("page"),
+        limit: c.req.query("limit"),
+      });
+
+      if (!parse.success) {
+        const body = responseEnhancer.errorHandler(
+          parse.error.issues,
+          "Validation failed for all sources events params",
+        );
+        return c.json(body, body.status as ContentfulStatusCode);
+      }
+
+      const page = typeof parse.data.page === "number" ? parse.data.page : 1;
+      const limit = typeof parse.data.limit === "number" ? parse.data.limit : 100;
+
+      const result = await sourcesService.getAllSourcesEvents(page, limit);
+      const body = responseEnhancer.ok(
+        result,
+        "All sources events fetched successfully",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    } catch (error) {
+      const body = responseEnhancer.errorHandler(
+        error,
+        "Failed to get all sources events",
       );
       return c.json(body, body.status as ContentfulStatusCode);
     }

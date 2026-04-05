@@ -6,6 +6,8 @@ const sourcesRoutes = new Hono<Env, Schema, "/sources">();
 
 sourcesRoutes.get("/", sourcesController.getSources);
 
+sourcesRoutes.get('/all', sourcesController.getAllSourcesEvents);
+
 sourcesRoutes.get("/:sourceKey/events", sourcesController.getSourceEvents);
 
 export default sourcesRoutes;
