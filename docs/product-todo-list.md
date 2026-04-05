@@ -16,7 +16,7 @@ Lista accionable derivada de [`strategy/05-product-roadmap.md`](./strategy/05-pr
 
 - [x] Elegir las primeras fuentes a integrar.
 - [x] Definir esquema unificado de datos para eventos.
-- [ ] Implementar primer flujo de extracción desde fuentes públicas.
+- [x] Implementar primer flujo de extracción desde fuentes públicas.
 - [ ] Normalizar fechas, comunas, categorías y precios.
 - [ ] Guardar URL canónica y metadata mínima por evento.
 - [ ] Registrar errores básicos de scraping e ingesta.
