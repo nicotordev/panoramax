@@ -42,4 +42,4 @@ COPY --from=deps /app/apps/api/package.json ./package.json
 
 EXPOSE 3001
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/src/server.js"]

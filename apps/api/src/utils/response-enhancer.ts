@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { flattenError, ZodError } from "zod";
 import { Prisma } from "../generated/prisma/client.js";
 
 type JsonPrimitive = string | number | boolean | null;
@@ -189,6 +190,13 @@ class ResponseEnhancer {
       }
       const resolvedStatus = status >= 400 ? status : 500;
       return this.errorResponse(resolvedStatus, message, "HTTP_EXCEPTION");
+    }
+
+    if (error instanceof ZodError) {
+      return this.badRequest("Validation failed", {
+        code: "ZOD_VALIDATION",
+        ...flattenError(error),
+      });
     }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
