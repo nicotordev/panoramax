@@ -21,7 +21,8 @@ export type IngestSourceOptions = {
   region?: string;
   /**
    * When `true`, run OpenAI enrichment if `OPENAI_API_KEY` is set.
-   * When `false`, skip. When omitted, use `INGEST_ENRICH_WITH_OPENAI=true` and API key.
+   * When `false`, skip.
+   * When omitted, run enrichment automatically whenever `OPENAI_API_KEY` is set.
    */
   enrichWithLlm?: boolean;
 };

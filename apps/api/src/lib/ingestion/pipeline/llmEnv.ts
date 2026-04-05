@@ -7,5 +7,5 @@ export function shouldRunLlmEnrichment(explicit?: boolean): boolean {
   if (explicit === true) {
     return hasKey;
   }
-  return process.env.INGEST_ENRICH_WITH_OPENAI === "true" && hasKey;
+  return hasKey;
 }

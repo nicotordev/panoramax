@@ -15,6 +15,9 @@ const persistArg = process.argv.find((arg) => arg.startsWith("--persist="));
 const stopOnEmptyArg = process.argv.find((arg) =>
   arg.startsWith("--stop-on-empty="),
 );
+const enrichWithLlmArg = process.argv.find((arg) =>
+  arg.startsWith("--enrich-with-llm="),
+);
 const concurrencyArg = process.argv.find((arg) =>
   arg.startsWith("--concurrency="),
 );
@@ -39,6 +42,9 @@ const persist = persistArg ? persistArg.split("=")[1] !== "false" : true;
 const stopOnEmpty = stopOnEmptyArg
   ? stopOnEmptyArg.split("=")[1] !== "false"
   : true;
+const enrichWithLlm = enrichWithLlmArg
+  ? enrichWithLlmArg.split("=")[1] === "true"
+  : undefined;
 const concurrency = concurrencyArg
   ? Math.max(1, Number(concurrencyArg.split("=")[1]))
   : 3;
@@ -62,7 +68,7 @@ if (
   !Number.isFinite(concurrency)
 ) {
   console.error(
-    "Usage: tsx src/scripts/ingest-all-pages.ts [--sources=gam,ticketplus] [--from-page=1] [--to-page=10] [--limit=50] [--persist=false] [--stop-on-empty=true] [--concurrency=3]\n\nNOTE: --persist now defaults to true (persist by default, +); supply --persist=false to skip persistence."
+    "Usage: tsx src/scripts/ingest-all-pages.ts [--sources=gam,ticketplus] [--from-page=1] [--to-page=10] [--limit=50] [--persist=false] [--stop-on-empty=true] [--enrich-with-llm=true] [--concurrency=3]\n\nNOTE: --persist now defaults to true (persist by default, +); supply --persist=false to skip persistence."
   );
   process.exit(1);
 }
@@ -73,7 +79,7 @@ function sleep(ms: number) {
 
 function logStart(source: string, page: number) {
   console.log(
-    `[${new Date().toISOString()}] Starting ingest source=${source} page=${page}`,
+    `[${new Date().toISOString()}] Starting ingest source=${source} page=${page} enrichWithLlm=${String(enrichWithLlm ?? Boolean(process.env.OPENAI_API_KEY))}`,
   );
 }
 
@@ -113,6 +119,7 @@ async function runSource(source: SourceKey): Promise<IngestionSummary[]> {
         page,
         limit,
         persist,
+        enrichWithLlm,
       });
 
       logResult(source, page, result);

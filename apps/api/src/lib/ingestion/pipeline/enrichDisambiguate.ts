@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import type {
   EventCandidate,
   LlmEnrichmentPatch,
@@ -23,6 +24,57 @@ Rules:
 - audience must be one of the allowed enum strings if you set it.
 - If information is ambiguous, set needsReview to true and a short Spanish reviewNotes.
 - dateText: only fill when the candidate's dateText is empty and the snippets contain a clear date phrase.`;
+
+const pricingPrompt = `You extract structured ticket tiers from Chilean event pricing text in Spanish.
+Return ONLY a JSON object matching the schema.
+Rules:
+- Extract one tier per visible line or label such as Preventa 1, Preventa 2, General, VIP, Andes, Pacífico, Visita.
+- Preserve the original order.
+- Use currency "CLP" when prices are shown as "$" or "CLP" and no other currency is stated.
+- If a line only shows one value, put it in "price" and leave fee/totalPrice null or omitted.
+- If a line clearly shows subtotal, fee, and total, map them to price, fee, and totalPrice.
+- Do not invent tiers, split bundles, or infer fees.
+- If the pricing text does not contain tiers, return an empty tiers array.`;
+
+const pricingOnlySchema = z.object({
+  tiers: z.array(
+    z.object({
+      name: z.string().min(1),
+      price: z.number().nullable().optional(),
+      fee: z.number().nullable().optional(),
+      totalPrice: z.number().nullable().optional(),
+      currency: z.string().optional(),
+      sortOrder: z.number().int().nonnegative().optional(),
+      rawText: z.string().nullable().optional(),
+    }),
+  ),
+});
+
+async function extractPricingTiers(
+  client: OpenAI,
+  model: string,
+  candidate: EventCandidate,
+  pricingText: string,
+) {
+  const completion = await client.chat.completions.parse({
+    model,
+    messages: [
+      { role: "system", content: pricingPrompt },
+      {
+        role: "user",
+        content: JSON.stringify({
+          title: candidate.title,
+          source: candidate.source,
+          pricing: pricingText,
+        }),
+      },
+    ],
+    response_format: zodResponseFormat(pricingOnlySchema, "pricing_tiers"),
+    temperature: 0,
+  });
+
+  return completion.choices[0]?.message.parsed?.tiers ?? [];
+}
 
 export async function enrichDisambiguateCandidate(
   candidate: EventCandidate,
@@ -57,6 +109,37 @@ export async function enrichDisambiguateCandidate(
     temperature: 0.2,
   });
 
-  const parsed = completion.choices[0]?.message.parsed;
-  return parsed ?? null;
+  const parsed = completion.choices[0]?.message.parsed ?? null;
+  if (
+    parsed &&
+    (!parsed.tiers || parsed.tiers.length === 0) &&
+    safeSnippets.pricing?.trim()
+  ) {
+    const tiers = await extractPricingTiers(
+      client,
+      model,
+      candidate,
+      safeSnippets.pricing,
+    );
+    if (tiers.length > 0) {
+      return {
+        ...parsed,
+        tiers,
+      };
+    }
+  }
+
+  if (!parsed && safeSnippets.pricing?.trim()) {
+    const tiers = await extractPricingTiers(
+      client,
+      model,
+      candidate,
+      safeSnippets.pricing,
+    );
+    if (tiers.length > 0) {
+      return { tiers };
+    }
+  }
+
+  return parsed;
 }
