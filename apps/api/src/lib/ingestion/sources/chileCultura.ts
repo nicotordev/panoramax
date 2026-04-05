@@ -1,7 +1,10 @@
 import { load } from "cheerio";
-import { CategoryPrimary, SourceType } from "../../generated/prisma/enums.js";
-import { scrapeHtml } from "../brightdata.js";
-import { prisma } from "../prisma.js";
+import {
+  CategoryPrimary,
+  SourceType,
+} from "../../../generated/prisma/enums.js";
+import { scrapeHtml } from "../../brightdata.js";
+import { prisma } from "../../prisma.js";
 
 type ChileCulturaListingItem = {
   sourceEventId: string;

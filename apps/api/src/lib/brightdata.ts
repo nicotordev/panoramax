@@ -24,6 +24,10 @@ if (process.env.NODE_ENV !== "production") {
   globalForBrightData.brightDataClient = brightDataClient;
 }
 
+export const closeBrightDataClient = async () => {
+  await brightDataClient.close();
+};
+
 type ScrapeResponse =
   | string
   | {
