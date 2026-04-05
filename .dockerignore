@@ -1,0 +1,15 @@
+.git
+.gitignore
+.DS_Store
+node_modules
+.pnpm-store
+coverage
+docs
+*.log
+.env
+.env.*
+!.env.example
+apps/*/node_modules
+apps/*/.next
+apps/*/dist
+apps/*/coverage
