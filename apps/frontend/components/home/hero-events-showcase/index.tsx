@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import {
   HiArrowLongRight,
-  HiMagnifyingGlass,
   HiChevronLeft,
   HiChevronRight,
   HiLightBulb,
@@ -28,9 +27,6 @@ import {
   formatStatInt,
   wrapIndex,
 } from "@/lib/home-showcase.utils"
-import { Input } from "@/components/ui/input"
-import { EventDatePicker } from "./event-date-picker"
-import { Button } from "@/components/ui/button"
 
 /**
  * Contenido principal del hero (copy + carrusel).
@@ -153,19 +149,6 @@ export default function HeroEventsShowcase({
           <p className="mt-6 max-w-md text-base leading-relaxed text-foreground/85">
             {t("description")}
           </p>
-
-          <div className="mt-10 flex flex-wrap items-center overflow-hidden rounded-full bg-input/50">
-            <Input
-              placeholder={t("searchEvents")}
-              className="max-w-sm rounded-none border-0 border-r! border-border/80 bg-transparent! shadow-none"
-            />
-            <div className="border-r border-border/80">
-              <EventDatePicker />
-            </div>
-            <Button className="flex flex-1 rounded-none">
-              <HiMagnifyingGlass />
-            </Button>
-          </div>
 
           <div className="mt-14 flex flex-wrap gap-8">
             {highlightStats.map(({ value, label }) => (

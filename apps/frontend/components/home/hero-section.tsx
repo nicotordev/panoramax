@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation"
 import type { Event, EventsListMeta } from "@/types/api"
 import { useTranslations } from "next-intl"
 import { HiArrowLongRight } from "react-icons/hi2"
+import Search from "@/components/search"
 import Logo from "../common/logo"
 import HeroEventsShowcase from "./hero-events-showcase"
 import MobileMenu from "./mobile-menu"
@@ -74,7 +75,22 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
         </header>
 
         <main className="flex flex-col py-24">
-          <div className="mx-auto flex w-full max-w-7xl flex-1 px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-6 lg:px-8">
+            <div className="w-full max-w-md">
+              <Search
+                applicationId="KBCX7PR8E2"
+                apiKey="073c03ecb5443c48d8512c2953442a33"
+                indexName="events_index"
+                attributes={{
+                  primaryText: "title",
+                  secondaryText: "description",
+                  tertiaryText: "summary",
+                  url: "",
+                  image: "imageUrl",
+                }}
+                darkMode={false}
+              />
+            </div>
             <HeroEventsShowcase events={events} eventsMeta={eventsMeta} />
           </div>
         </main>
