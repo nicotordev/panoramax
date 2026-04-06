@@ -1,3 +1,4 @@
+import EventsBentoGrid from "@/components/home/events-bento-grid"
 import HeroSection from "@/components/home/hero-section"
 import serverClient from "@/lib/server.client"
 import { setRequestLocale } from "next-intl/server"
@@ -10,11 +11,22 @@ export default async function Page({ params }: HomePageProps) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  const { data: events, meta } = await serverClient.getEvents({ limit: 4 })
+  const [weeklyEventsResponse, heroResponse] = await Promise.all([
+    serverClient.getCurrentWeekEvents({
+      limit: 4,
+      status: "scheduled",
+    }),
+    serverClient.getEvents({
+      limit: 5,
+      status: "scheduled",
+    }),
+  ]);
+  const { data: heroEvents } = heroResponse
 
   return (
     <main>
-      <HeroSection events={events} eventsMeta={meta} />
+      <HeroSection events={weeklyEventsResponse.data} eventsMeta={weeklyEventsResponse.meta} />
+      <EventsBentoGrid events={heroEvents} />
     </main>
   )
 }

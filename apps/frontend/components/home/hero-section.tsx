@@ -73,8 +73,8 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
           </nav>
         </header>
 
-        <main className="flex flex-1 flex-col pb-16 lg:pb-24">
-          <div className="mx-auto flex w-full max-w-7xl flex-1 px-6 pt-4 lg:px-8 lg:pt-2">
+        <main className="flex flex-col py-24">
+          <div className="mx-auto flex w-full max-w-7xl flex-1 px-6 lg:px-8">
             <HeroEventsShowcase events={events} eventsMeta={eventsMeta} />
           </div>
         </main>

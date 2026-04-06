@@ -14,6 +14,7 @@ You receive a JSON "candidate" from an HTML parser plus text "snippets" from the
 Return a JSON object with ONLY fields you can support using those snippets. Omit keys you cannot improve.
 Rules:
 - Never invent dates, times, URLs, ticket links, sectors, tiers, or prices not clearly implied by the snippets.
+- Never invent or modify slugs, source ids, canonical ids, image URLs, source URLs, or ticket URLs.
 - Ignore website chrome and UI boilerplate such as login text, cookies, category menus, "compra tu entrada", "ver más", "produce", account widgets, and navigation labels.
 - Prefer fixing messy titles, venue names, descriptions, and short Spanish summaries.
 - If snippets contain ticket tiers, return them as structured tiers in the same order they appear.

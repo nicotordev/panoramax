@@ -95,6 +95,21 @@ class EventsController {
       return c.json(body, body.status as ContentfulStatusCode);
     }
   };
+
+  public listCurrentWeekEvents = async (c: Context) => {
+    try {
+      const query = validQuery<ListEventsQuery>(c);
+      const result = await eventsService.listCurrentWeekEvents(query);
+      const body = responseEnhancer.ok(result, "Current week events listed successfully");
+      return c.json(body, body.status as ContentfulStatusCode);
+    } catch (error) {
+      const body = responseEnhancer.errorHandler(
+        error,
+        "Failed to list current week events",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    }
+  };
 }
 
 const eventsController = new EventsController();

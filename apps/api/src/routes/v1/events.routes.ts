@@ -1,8 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
 import type { Env, Schema } from "hono";
 import { Hono } from "hono";
-import eventsController from "../../controllers/events.controller.js";
 import { apiAccess } from "../../constants/api-access.js";
+import eventsController from "../../controllers/events.controller.js";
 import {
   eventCreateBodySchema,
   eventIdParamSchema,
@@ -25,6 +25,12 @@ eventsRoutes.post(
   requireApiKey([...apiAccess.eventsWrite]),
   zValidator("json", eventCreateBodySchema, zodValidationHook),
   eventsController.create,
+);
+
+eventsRoutes.get(
+  "/current-week",
+  zValidator("query", listEventsQuerySchema, zodValidationHook),
+  eventsController.listCurrentWeekEvents,
 );
 
 eventsRoutes.get(

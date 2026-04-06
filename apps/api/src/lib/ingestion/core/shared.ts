@@ -225,6 +225,36 @@ export const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+function looksLikeHumanSlug(value: string | null | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+
+  const trimmed = value.trim();
+  return /[a-z]/i.test(trimmed) && !/^\d+$/.test(trimmed);
+}
+
+export function buildEventSlug({
+  title,
+  source,
+  sourceEventId,
+  sourceUrl,
+}: {
+  title: string;
+  source: string;
+  sourceEventId?: string | null;
+  sourceUrl: string;
+}) {
+  const base =
+    slugify(looksLikeHumanSlug(sourceEventId) ? sourceEventId : title) || "evento";
+  const suffix = createHash("sha256")
+    .update(`${source}:${sourceEventId ?? sourceUrl}`)
+    .digest("hex")
+    .slice(0, 8);
+
+  return `${base}-${suffix}`;
+}
+
 export const inferSummary = (description: string | null) => {
   if (!description) {
     return null;
@@ -600,12 +630,19 @@ export const defaultEvent = ({
 }) => {
   const canonicalVenueName = normalizeVenueName(venueName) ?? venueName;
   const derivedNeedsReview = needsReview ?? false;
+  const slug = buildEventSlug({
+    title,
+    source,
+    sourceEventId,
+    sourceUrl,
+  });
 
   return {
     source,
     sourceType,
     sourceEventId: sourceEventId ?? null,
     sourceUrl,
+    slug,
     ticketUrl: ticketUrl ?? null,
     rawTitle: rawTitleInput ?? title,
     rawPayload,

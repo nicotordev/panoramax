@@ -26,7 +26,10 @@ function toCreateData(
   };
 }
 
-function toTierCreateData(tiers: EventTierInput[] | undefined, eventId: string) {
+function toTierCreateData(
+  tiers: EventTierInput[] | undefined,
+  eventId: string,
+) {
   return (tiers ?? []).map((tier, index) => ({
     eventId,
     name: tier.name,
@@ -93,6 +96,81 @@ class EventsService {
         communes: distinctCommunes.filter((row) => row.commune.trim() !== "")
           .length,
         free: freeTotal,
+      },
+    };
+  }
+
+  public async listCurrentWeekEvents(query?: ListEventsQuery) {
+    const page = query?.page ?? 1;
+    const limit = query?.limit ?? 20;
+    const city = query?.city;
+    const commune = query?.commune;
+    const region = query?.region;
+    const source = query?.source;
+    const status = query?.status;
+    const categoryPrimary = query?.categoryPrimary;
+    const skip = (page - 1) * limit;
+
+    // Upcoming events only: from now until the end of next week.
+    // This includes the remainder of current week + full following week.
+    const startOfWindow = new Date();
+    const startOfCurrentWeek = new Date(startOfWindow);
+    const day = startOfCurrentWeek.getDay();
+    const diffToMonday = (day + 6) % 7;
+    startOfCurrentWeek.setDate(startOfCurrentWeek.getDate() - diffToMonday);
+    startOfCurrentWeek.setHours(0, 0, 0, 0);
+
+    const endOfWindow = new Date(startOfCurrentWeek);
+    endOfWindow.setDate(endOfWindow.getDate() + 14);
+
+    const where: Prisma.EventWhereInput = {
+      ...(city !== undefined && city !== "" ? { city } : {}),
+      ...(commune !== undefined && commune !== "" ? { commune } : {}),
+      ...(region !== undefined && region !== "" ? { region } : {}),
+      ...(source !== undefined && source !== "" ? { source } : {}),
+      ...(status !== undefined ? { status } : {}),
+      ...(categoryPrimary !== undefined ? { categoryPrimary } : {}),
+      startAt: {
+        gte: startOfWindow,
+        lt: endOfWindow,
+      },
+    };
+
+    const [rows, total, freeTotal, distinctCommunes] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        orderBy: { startAt: "asc" },
+        skip,
+        take: limit,
+        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+      }),
+      prisma.event.count({ where }),
+      prisma.event.count({
+        where: {
+          ...where,
+          isFree: true,
+        },
+      }),
+      prisma.event.findMany({
+        where,
+        select: { commune: true },
+        distinct: ["commune"],
+      }),
+    ]);
+
+    return {
+      items: rows.map((row) => serializeEvent(row)),
+      total,
+      page,
+      limit,
+      stats: {
+        communes: distinctCommunes.filter((row) => row.commune.trim() !== "")
+          .length,
+        free: freeTotal,
+      },
+      weekRange: {
+        start: startOfWindow.toISOString(),
+        end: endOfWindow.toISOString(),
       },
     };
   }

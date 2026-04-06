@@ -97,8 +97,7 @@ function normalizeEventsResponse(data: unknown): GetEventsResult {
               new Set(
                 items.map((event) => (event.commune || event.city || "").trim())
               ).size,
-            free:
-              stats?.free ?? items.filter((event) => event.isFree).length,
+            free: stats?.free ?? items.filter((event) => event.isFree).length,
           },
         },
       }
@@ -141,12 +140,14 @@ class ServerClient {
   async getEvents(params?: {
     page?: number
     limit?: number
+    status?: Event["status"]
   }): Promise<GetEventsResult> {
     try {
       const page = params?.page ?? 1
       const limit = params?.limit ?? 100
+      const status = params?.status
       const response = await this.axios.get<unknown>("/api/v1/events", {
-        params: { page, limit },
+        params: { page, limit, status },
       })
       return normalizeEventsResponse(response.data)
     } catch (error) {
@@ -165,6 +166,46 @@ class ServerClient {
 
       console.error("[ServerClient] Unknown error when fetching events:", error)
       throw new Error("An unexpected error occurred while fetching events.")
+    }
+  }
+
+  async getCurrentWeekEvents(params?: {
+    page?: number
+    limit?: number
+    status?: Event["status"]
+  }): Promise<GetEventsResult> {
+    try {
+      const page = params?.page ?? 1
+      const limit = params?.limit ?? 100
+      const status = params?.status
+      const response = await this.axios.get<unknown>(
+        "/api/v1/events/current-week",
+        {
+          params: { page, limit, status },
+        }
+      )
+      return normalizeEventsResponse(response.data)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "[ServerClient] Axios error when fetching current week events:",
+          error.response?.status,
+          error.response?.data || error.message
+        )
+        throw new Error(
+          `Failed to fetch current week events: ${error.response?.status ?? ""} ${
+            typeof error.response?.data === "string" ? error.response.data : ""
+          }`
+        )
+      }
+
+      console.error(
+        "[ServerClient] Unknown error when fetching current week events:",
+        error
+      )
+      throw new Error(
+        "An unexpected error occurred while fetching current week events."
+      )
     }
   }
 }

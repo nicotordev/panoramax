@@ -24,6 +24,7 @@ const eventCoreSchema = z.object({
   sourceType: z.nativeEnum(SourceType),
   sourceEventId: z.string().nullish(),
   sourceUrl: z.string().min(1),
+  slug: z.string().min(1).nullish(),
   ticketUrl: z.string().nullish(),
   importedAt: z.coerce.date().optional(),
   lastSeenAt: z.coerce.date().optional(),
