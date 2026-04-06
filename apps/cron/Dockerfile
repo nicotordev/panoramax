@@ -1,20 +1,40 @@
-FROM node:20-alpine
+FROM node:20-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
 
 WORKDIR /app
 
-# Copy only the cron package files to leverage efficient Docker layer caching
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-COPY . .
+FROM base AS deps
 
-# Install pnpm globally
-RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig.node.json tsconfig.node.json
+COPY apps/cron/package.json apps/cron/package.json
 
-# Install only production dependencies (not all workspace deps)
-RUN pnpm install --filter ./ --prod --frozen-lockfile
+RUN pnpm install --filter @panoramax/cron... --frozen-lockfile
 
-# Build the cron app specifically
-RUN pnpm build
+FROM base AS build
 
-# Start the app
-CMD ["pnpm", "start"]
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig.node.json tsconfig.node.json
+COPY apps/cron/package.json apps/cron/package.json
+COPY apps/cron/tsconfig.json apps/cron/tsconfig.json
+COPY apps/cron/src apps/cron/src
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/cron/node_modules ./apps/cron/node_modules
+
+RUN pnpm --filter @panoramax/cron build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/cron/package.json ./package.json
+COPY --from=build /app/apps/cron/dist ./dist
+
+CMD ["node", "dist/src/index.js"]

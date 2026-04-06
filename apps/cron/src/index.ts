@@ -1,16 +1,21 @@
 import "dotenv/config";
 
-const { API_URL, API_KEY } = process.env;
-
-if (!API_URL || !API_KEY) {
-  throw new Error("API_URL and API_KEY must be set in environment variables");
+function requireEnv(name: "API_URL" | "API_KEY"): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} must be set in environment variables`);
+  }
+  return value;
 }
 
 async function main(): Promise<void> {
   try {
-    const response = await fetch(API_URL, {
+    const apiUrl = requireEnv("API_URL");
+    const apiKey = requireEnv("API_KEY");
+
+    const response = await fetch(apiUrl, {
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
     });
