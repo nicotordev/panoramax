@@ -12,6 +12,10 @@
       "name": "frontend",
       "path": "apps/frontend",
     },
+    {
+      "name": "cron",
+      "path": "apps/cron",
+    },
   ],
   "settings": {
     "eslint.workingDirectories": [{ "mode": "auto" }],
