@@ -10,9 +10,17 @@
     "build": "pnpm -r --filter @panoramax/api --filter @panoramax/frontend build",
     "build:api": "pnpm --filter @panoramax/api build",
     "build:frontend": "pnpm --filter @panoramax/frontend build",
+    "build:cron": "pnpm --filter @panoramax/cron build",
     "lint": "pnpm --filter @panoramax/frontend lint",
+    "lint:api": "pnpm --filter @panoramax/api lint",
+    "lint:frontend": "pnpm --filter @panoramax/frontend lint",
+    "lint:cron": "pnpm --filter @panoramax/cron lint",
     "typecheck": "pnpm -r --filter @panoramax/api --filter @panoramax/frontend --if-present typecheck",
+    "typecheck:api": "pnpm --filter @panoramax/api typecheck",
+    "typecheck:frontend": "pnpm --filter @panoramax/frontend typecheck",
+    "typecheck:cron": "pnpm --filter @panoramax/cron typecheck",
     "docker:build:api": "docker build -f apps/api/Dockerfile -t panoramax-api .",
-    "docker:build:frontend": "docker build -f apps/frontend/Dockerfile -t panoramax-frontend ."
+    "docker:build:frontend": "docker build -f apps/frontend/Dockerfile -t panoramax-frontend .",
+    "docker:build:cron": "docker build -f apps/cron/Dockerfile -t panoramax-cron ."
   }
 }
