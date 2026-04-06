@@ -59,6 +59,10 @@ const ingestAllPagesBodySchema = z
     }
   });
 
+const ingestAllPagesStatusQuerySchema = z.object({
+  taskId: z.string().uuid().optional(),
+});
+
 class SourcesController {
   public async getSources(c: Context) {
     try {
@@ -174,7 +178,7 @@ class SourcesController {
             sourceKeys.includes(value as SourceKey),
         ) ?? undefined;
 
-      const result = await sourcesService.ingestAllPages({
+      const result = await sourcesService.startIngestAllPages({
         sources: requestedSources,
         fromPage: parse.data.fromPage,
         toPage: parse.data.toPage,
@@ -185,15 +189,48 @@ class SourcesController {
         concurrency: parse.data.concurrency,
       });
 
-      const body = responseEnhancer.ok(
+      const body = responseEnhancer.accepted(
         result,
-        "All-pages ingestion finished successfully",
+        result.started
+          ? "All-pages ingestion started"
+          : "All-pages ingestion is already running",
       );
       return c.json(body, body.status as ContentfulStatusCode);
     } catch (error) {
       const body = responseEnhancer.errorHandler(
         error,
         "Failed to ingest all pages",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    }
+  }
+
+  public async getIngestAllPagesStatus(c: Context) {
+    try {
+      const parse = ingestAllPagesStatusQuerySchema.safeParse({
+        taskId: c.req.query("taskId"),
+      });
+
+      if (!parse.success) {
+        const body = responseEnhancer.errorHandler(
+          parse.error.issues,
+          "Validation failed for ingest-all-pages status params",
+        );
+        return c.json(body, body.status as ContentfulStatusCode);
+      }
+
+      const result = await sourcesService.getIngestAllPagesStatus(
+        parse.data.taskId,
+      );
+      const body = responseEnhancer.ok(
+        result,
+        "All-pages ingestion status fetched successfully",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    } catch (error) {
+      const body = responseEnhancer.errorHandler(
+        error,
+        "Failed to get ingest-all-pages status",
       );
       return c.json(body, body.status as ContentfulStatusCode);
     }

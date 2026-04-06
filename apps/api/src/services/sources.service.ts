@@ -3,11 +3,13 @@ import {
   sourceRegistry,
   type SourceKey,
 } from "../lib/ingestion/core/sourceRegistry.js";
+import taskMonitorService from "./task-monitor.service.js";
 
 /** HTTP source endpoints always persist scraped events (same policy as ingest scripts). */
 const PERSIST = true as const;
+const INGEST_ALL_PAGES_TASK_TYPE = "sources:ingest-all-pages";
 
-type IngestAllPagesInput = {
+export type IngestAllPagesInput = {
   sources?: SourceKey[];
   fromPage?: number;
   toPage?: number;
@@ -18,7 +20,7 @@ type IngestAllPagesInput = {
   concurrency?: number;
 };
 
-type IngestAllPagesSummary = {
+export type IngestAllPagesSummary = {
   source: string;
   page: number;
   count: number;
@@ -62,7 +64,12 @@ class SourcesService {
     return results.flat();
   }
 
-  public async ingestAllPages(input: IngestAllPagesInput = {}) {
+  public async ingestAllPages(
+    input: IngestAllPagesInput = {},
+    options?: {
+      onProgress?: (summaries: IngestAllPagesSummary[]) => Promise<void> | void;
+    },
+  ) {
     const {
       sources = sourceKeys,
       fromPage = 1,
@@ -103,6 +110,8 @@ class SourcesService {
           errors: result.errors.length,
         });
 
+        await options?.onProgress?.([...summaries]);
+
         if (stopOnEmpty && result.processed === 0) {
           break;
         }
@@ -127,6 +136,73 @@ class SourcesService {
     );
 
     return summaries;
+  }
+
+  public async getIngestAllPagesStatus(taskId?: string) {
+    if (taskId) {
+      return await taskMonitorService.getTask<
+        IngestAllPagesInput,
+        IngestAllPagesSummary[]
+      >(taskId);
+    }
+
+    const [activeTask] = await taskMonitorService.listTasks<
+      IngestAllPagesInput,
+      IngestAllPagesSummary[]
+    >(1, INGEST_ALL_PAGES_TASK_TYPE);
+
+    return activeTask ?? null;
+  }
+
+  public async listIngestAllPagesTasks(limit = 20) {
+    return await taskMonitorService.listTasks<
+      IngestAllPagesInput,
+      IngestAllPagesSummary[]
+    >(limit, INGEST_ALL_PAGES_TASK_TYPE);
+  }
+
+  public async startIngestAllPages(input: IngestAllPagesInput = {}) {
+    const startedTask = await taskMonitorService.startExclusiveTask<
+      IngestAllPagesInput,
+      IngestAllPagesSummary[]
+    >(INGEST_ALL_PAGES_TASK_TYPE, input);
+
+    if (!startedTask.started) {
+      return {
+        started: false as const,
+        task: startedTask.task,
+      };
+    }
+
+    const task = startedTask.task;
+
+    const jobPromise = taskMonitorService
+      .markRunning<IngestAllPagesInput, IngestAllPagesSummary[]>(task.id)
+      .then(() =>
+        this.ingestAllPages(input, {
+          onProgress: async (summaries) => {
+            await taskMonitorService.markHeartbeat(task.id, summaries);
+          },
+        }),
+      )
+      .then(async (summaries) => {
+        await taskMonitorService.markSucceeded(task.id, summaries);
+        return summaries;
+      })
+      .catch(async (error: unknown) => {
+        await taskMonitorService.markFailed(
+          task.id,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw error;
+      });
+
+    void jobPromise.catch(() => undefined);
+
+    return {
+      started: true as const,
+      task,
+    };
   }
 }
 

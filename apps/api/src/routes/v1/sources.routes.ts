@@ -9,6 +9,7 @@ const sourcesRoutes = new Hono<Env, Schema, "/sources">();
 sourcesRoutes.get("/", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getSources);
 
 sourcesRoutes.get("/all", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getAllSourcesEvents);
+sourcesRoutes.get("/ingest-all-pages", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getIngestAllPagesStatus);
 sourcesRoutes.post("/ingest-all-pages", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.ingestAllPages);
 
 sourcesRoutes.get("/:sourceKey/events", requireApiKey([...apiAccess.sourcesIngest]), sourcesController.getSourceEvents);
