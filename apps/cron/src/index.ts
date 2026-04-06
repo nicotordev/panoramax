@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-function requireEnv(name: "API_URL" | "API_KEY"): string {
+function requireEnv(name: "API_URL" | "API_KEY" | "METHOD"): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`${name} must be set in environment variables`);
@@ -14,14 +14,17 @@ async function main(): Promise<void> {
     const apiKey = requireEnv("API_KEY");
 
     const response = await fetch(apiUrl, {
+      method: process.env.METHOD || "GET",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}: ${response.statusText}`);
+      throw new Error(
+        `Request failed with status ${response.status}: ${response.statusText}`,
+      );
     }
 
     const data = await response.json();
