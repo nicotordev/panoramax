@@ -8,6 +8,10 @@ export type TaskStatus =
   | "failed"
   | "stale";
 
+function isTerminalStatus(status: TaskStatus) {
+  return status === "succeeded" || status === "failed" || status === "stale";
+}
+
 export type TaskRecord<TInput = unknown, TOutput = unknown> = {
   id: string;
   type: string;
@@ -105,6 +109,9 @@ class TaskMonitorService {
     if (!task) {
       return null;
     }
+    if (isTerminalStatus(task.status)) {
+      return task;
+    }
 
     const now = new Date().toISOString();
     const updated: TaskRecord<TInput, TOutput> = {
@@ -128,6 +135,9 @@ class TaskMonitorService {
     if (!task) {
       return null;
     }
+    if (isTerminalStatus(task.status)) {
+      return task;
+    }
 
     const updated: TaskRecord<TInput, TOutput> = {
       ...task,
@@ -150,12 +160,16 @@ class TaskMonitorService {
     if (!task) {
       return null;
     }
+    if (isTerminalStatus(task.status)) {
+      return task;
+    }
 
+    const now = new Date().toISOString();
     const updated: TaskRecord<TInput, TOutput> = {
       ...task,
       status: "succeeded",
-      heartbeatAt: new Date().toISOString(),
-      finishedAt: new Date().toISOString(),
+      heartbeatAt: now,
+      finishedAt: now,
       output,
       error: null,
     };
@@ -171,12 +185,16 @@ class TaskMonitorService {
     if (!task) {
       return null;
     }
+    if (isTerminalStatus(task.status)) {
+      return task;
+    }
 
+    const now = new Date().toISOString();
     const updated: TaskRecord<TInput, TOutput> = {
       ...task,
       status: "failed",
-      heartbeatAt: new Date().toISOString(),
-      finishedAt: new Date().toISOString(),
+      heartbeatAt: now,
+      finishedAt: now,
       error,
     };
 
