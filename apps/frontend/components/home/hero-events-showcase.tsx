@@ -1,10 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { Link } from "@/i18n/navigation"
 import type { Event, EventsListMeta } from "@/types/api"
 import Image from "next/image"
-import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
 import {
   HiArrowLongRight,
   HiChevronLeft,
@@ -18,8 +19,8 @@ interface HeroEventsShowcaseProps {
   eventsMeta: EventsListMeta
 }
 
-function formatStatInt(n: number): string {
-  return Math.max(0, Math.floor(n)).toLocaleString("es-CL")
+function formatStatInt(n: number, locale: string): string {
+  return Math.max(0, Math.floor(n)).toLocaleString(locale)
 }
 
 const wrapIndex = (i: number, len: number) => ((i % len) + len) % len
@@ -28,10 +29,10 @@ function formatCategoryLabel(cat: Event["categoryPrimary"]): string {
   return cat.replace(/_/g, " ")
 }
 
-function formatEventWhen(event: Event): string {
+function formatEventWhen(event: Event, locale: string): string {
   const text = event.dateText?.trim()
   if (text) return text
-  return new Date(event.startAt).toLocaleString(undefined, {
+  return new Date(event.startAt).toLocaleString(locale, {
     dateStyle: "medium",
     timeStyle: event.allDay ? undefined : "short",
   })
@@ -46,10 +47,12 @@ function DotIndicators({
   count,
   active,
   onSelect,
+  getAriaLabel,
 }: {
   count: number
   active: number
   onSelect: (i: number) => void
+  getAriaLabel: (index: number) => string
 }) {
   return (
     <div className="flex max-w-[200px] flex-wrap items-center justify-center gap-2">
@@ -58,7 +61,7 @@ function DotIndicators({
           key={i}
           type="button"
           onClick={() => onSelect(i)}
-          aria-label={`Ir al evento ${i + 1}`}
+          aria-label={getAriaLabel(i + 1)}
           className={cn(
             "h-1.5 rounded-full transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             active === i
@@ -73,10 +76,12 @@ function DotIndicators({
 
 function StackCard({
   event,
+  locale,
   position,
   zIndex,
 }: {
   event: Event
+  locale: string
   position: "left" | "center" | "right"
   zIndex: number
 }) {
@@ -123,7 +128,7 @@ function StackCard({
               {event.title}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {formatEventWhen(event)}
+              {formatEventWhen(event, locale)}
             </p>
           </div>
         )}
@@ -139,22 +144,25 @@ export default function HeroEventsShowcase({
   events,
   eventsMeta,
 }: HeroEventsShowcaseProps) {
+  const locale = useLocale()
+  const t = useTranslations("HomePage")
+
   const highlightStats = useMemo(() => {
     return [
       {
-        value: formatStatInt(eventsMeta.total),
-        label: "Eventos en la guía",
+        value: formatStatInt(eventsMeta.total, locale),
+        label: t("stats.events"),
       },
       {
-        value: formatStatInt(eventsMeta.stats.communes),
-        label: "Comunas en la guía",
+        value: formatStatInt(eventsMeta.stats.communes, locale),
+        label: t("stats.communes"),
       },
       {
-        value: formatStatInt(eventsMeta.stats.free),
-        label: "Gratis en la guía",
+        value: formatStatInt(eventsMeta.stats.free, locale),
+        label: t("stats.free"),
       },
     ]
-  }, [eventsMeta])
+  }, [eventsMeta, locale, t])
 
   const n = events.length
   const [activeIndex, setActiveIndex] = useState(0)
@@ -204,13 +212,13 @@ export default function HeroEventsShowcase({
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-sm">
               <HiLightBulb className="size-3 text-primary" aria-hidden />
-              Eventos en Vivo
+              {t("liveEvents")}
             </span>
             <Link
               href="/events"
               className="group flex items-center gap-1 text-sm font-medium text-foreground/90 transition-colors hover:text-foreground"
             >
-              Ver todos
+              {t("viewAll")}
               <HiArrowLongRight
                 className="size-3.5 transition-transform group-hover:translate-x-0.5"
                 aria-hidden
@@ -219,12 +227,11 @@ export default function HeroEventsShowcase({
           </div>
 
           <h1 className="font-serif text-5xl leading-[1.08] font-bold tracking-tight text-balance text-foreground sm:text-6xl xl:text-7xl">
-            Descubre lo mejor <span className="text-primary">de Chile</span>
+            {t("titleStart")} <span className="text-primary">{t("titleHighlight")}</span>
           </h1>
 
           <p className="mt-6 max-w-md text-base leading-relaxed text-foreground/85">
-            Explora cultura, música y entretenimiento. Desde teatros íntimos
-            hasta festivales masivos, encuentra tu próximo momento inolvidable.
+            {t("description")}
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -233,7 +240,7 @@ export default function HeroEventsShowcase({
                 href={`/events/${selectedEvent.id}`}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-primary/35 hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                Ver detalles
+                {t("viewDetails")}
                 <HiArrowLongRight className="size-4" aria-hidden />
               </a>
             ) : (
@@ -241,7 +248,7 @@ export default function HeroEventsShowcase({
                 href="/events"
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-primary/35 hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
-                Ver eventos
+                {t("viewEvents")}
                 <HiArrowLongRight className="size-4" aria-hidden />
               </Link>
             )}
@@ -249,7 +256,7 @@ export default function HeroEventsShowcase({
               type="button"
               className="group flex items-center gap-2 rounded-full border border-border/80 bg-background/40 px-6 py-3 text-sm font-semibold text-foreground backdrop-blur-md transition-all hover:border-primary/50 hover:bg-background/55 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              Explorar categorías
+              {t("exploreCategories")}
               <HiArrowLongRight
                 className="size-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden
@@ -277,23 +284,26 @@ export default function HeroEventsShowcase({
                 onPointerDown={handleDragStart}
                 onPointerUp={handleDragEnd}
                 role="region"
-                aria-label="Carrusel de eventos"
+                aria-label={t("carouselAria")}
               >
                 <StackCard
                   key={`prev-${prevEvent.id}`}
                   event={prevEvent}
+                  locale={locale}
                   position="left"
                   zIndex={1}
                 />
                 <StackCard
                   key={`next-${nextEvent.id}`}
                   event={nextEvent}
+                  locale={locale}
                   position="right"
                   zIndex={1}
                 />
                 <StackCard
                   key={`center-${selectedEvent.id}`}
                   event={selectedEvent}
+                  locale={locale}
                   position="center"
                   zIndex={10}
                 />
@@ -303,7 +313,7 @@ export default function HeroEventsShowcase({
                 <button
                   type="button"
                   onClick={() => paginate(-1)}
-                  aria-label="Evento anterior"
+                  aria-label={t("previousEvent")}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-background/30 text-foreground backdrop-blur-md transition-all hover:border-primary/50 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <HiChevronLeft className="size-4" />
@@ -313,12 +323,13 @@ export default function HeroEventsShowcase({
                   count={n}
                   active={slideIndex}
                   onSelect={setActiveIndex}
+                  getAriaLabel={(index) => t("goToEvent", { index })}
                 />
 
                 <button
                   type="button"
                   onClick={() => paginate(1)}
-                  aria-label="Evento siguiente"
+                  aria-label={t("nextEvent")}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-background/30 text-foreground backdrop-blur-md transition-all hover:border-primary/50 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <HiChevronRight className="size-4" />
@@ -333,7 +344,7 @@ export default function HeroEventsShowcase({
                   {selectedEvent.title}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatEventWhen(selectedEvent)} ·{" "}
+                  {formatEventWhen(selectedEvent, locale)} ·{" "}
                   {formatEventLocation(selectedEvent)}
                 </p>
               </div>
@@ -341,16 +352,16 @@ export default function HeroEventsShowcase({
           ) : (
             <div className="flex min-h-[320px] w-full max-w-sm flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-background/35 px-6 py-12 text-center shadow-lg backdrop-blur-md">
               <p className="text-sm font-medium text-foreground">
-                Aún no hay eventos para mostrar
+                {t("emptyTitle")}
               </p>
               <p className="mt-2 text-xs text-foreground/80">
-                Vuelve pronto o explora el listado completo.
+                {t("emptyDescription")}
               </p>
               <Link
                 href="/events"
                 className="mt-6 text-sm font-semibold text-primary underline-offset-4 hover:underline"
               >
-                Ir a eventos
+                {t("goToEvents")}
               </Link>
             </div>
           )}

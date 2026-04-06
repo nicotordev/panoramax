@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "Navigation globale",
+    "home": "Accueil",
+    "events": "Événements",
+    "thisWeek": "Cette semaine",
+    "free": "Gratuit",
+    "login": "Se connecter",
+    "openMainMenu": "Ouvrir le menu principal",
+    "closeMenu": "Fermer le menu"
+  },
+  "HomePage": {
+    "liveEvents": "Événements en direct",
+    "viewAll": "Voir tout",
+    "titleStart": "Découvrez le meilleur",
+    "titleHighlight": "du Chili",
+    "description": "Explorez la culture, la musique et le divertissement. Des théâtres intimistes aux festivals géants, trouvez votre prochain moment inoubliable.",
+    "viewDetails": "Voir les détails",
+    "viewEvents": "Voir les événements",
+    "exploreCategories": "Explorer les catégories",
+    "stats": {
+      "events": "Événements dans le guide",
+      "communes": "Communes dans le guide",
+      "free": "Gratuits dans le guide"
+    },
+    "carouselAria": "Carrousel d'événements",
+    "previousEvent": "Événement précédent",
+    "nextEvent": "Événement suivant",
+    "goToEvent": "Aller à l'événement {index}",
+    "emptyTitle": "Aucun événement à afficher pour le moment",
+    "emptyDescription": "Revenez bientôt ou explorez la liste complète.",
+    "goToEvents": "Aller aux événements"
+  },
+  "Common": {
+    "free": "Gratuit",
+    "paid": "Payant"
+  }
+}

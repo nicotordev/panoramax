@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "Navegación global",
+    "home": "Inicio",
+    "events": "Eventos",
+    "thisWeek": "Esta semana",
+    "free": "Gratis",
+    "login": "Iniciar sesión",
+    "openMainMenu": "Abrir menú principal",
+    "closeMenu": "Cerrar menú"
+  },
+  "HomePage": {
+    "liveEvents": "Eventos en vivo",
+    "viewAll": "Ver todos",
+    "titleStart": "Descubre lo mejor",
+    "titleHighlight": "de Chile",
+    "description": "Explora cultura, música y entretenimiento. Desde teatros íntimos hasta festivales masivos, encuentra tu próximo momento inolvidable.",
+    "viewDetails": "Ver detalles",
+    "viewEvents": "Ver eventos",
+    "exploreCategories": "Explorar categorías",
+    "stats": {
+      "events": "Eventos en la guía",
+      "communes": "Comunas en la guía",
+      "free": "Gratis en la guía"
+    },
+    "carouselAria": "Carrusel de eventos",
+    "previousEvent": "Evento anterior",
+    "nextEvent": "Evento siguiente",
+    "goToEvent": "Ir al evento {index}",
+    "emptyTitle": "Aún no hay eventos para mostrar",
+    "emptyDescription": "Vuelve pronto o explora el listado completo.",
+    "goToEvents": "Ir a eventos"
+  },
+  "Common": {
+    "free": "Gratis",
+    "paid": "De pago"
+  }
+}

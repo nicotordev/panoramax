@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "全局导航",
+    "home": "首页",
+    "events": "活动",
+    "thisWeek": "本周",
+    "free": "免费",
+    "login": "登录",
+    "openMainMenu": "打开主菜单",
+    "closeMenu": "关闭菜单"
+  },
+  "HomePage": {
+    "liveEvents": "现场活动",
+    "viewAll": "查看全部",
+    "titleStart": "探索",
+    "titleHighlight": "智利精选",
+    "description": "探索文化、音乐与娱乐。从私密剧场到大型节庆，找到你的下一个难忘时刻。",
+    "viewDetails": "查看详情",
+    "viewEvents": "查看活动",
+    "exploreCategories": "浏览分类",
+    "stats": {
+      "events": "指南中的活动",
+      "communes": "指南中的区县",
+      "free": "指南中的免费活动"
+    },
+    "carouselAria": "活动轮播",
+    "previousEvent": "上一个活动",
+    "nextEvent": "下一个活动",
+    "goToEvent": "前往第 {index} 个活动",
+    "emptyTitle": "暂时没有可展示的活动",
+    "emptyDescription": "请稍后再来，或查看完整活动列表。",
+    "goToEvents": "前往活动页"
+  },
+  "Common": {
+    "free": "免费",
+    "paid": "付费"
+  }
+}

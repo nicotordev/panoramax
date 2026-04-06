@@ -1,5 +1,7 @@
 import { navigation } from "@/data/misc.data"
+import { Link } from "@/i18n/navigation"
 import type { Event, EventsListMeta } from "@/types/api"
+import { useTranslations } from "next-intl"
 import { HiArrowLongRight } from "react-icons/hi2"
 import Logo from "../common/logo"
 import HeroEventsShowcase from "./hero-events-showcase"
@@ -11,6 +13,8 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
+  const t = useTranslations("Navigation")
+
   return (
     <div className="relative w-full overflow-hidden bg-background">
       <video
@@ -30,7 +34,7 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
       <div className="relative z-30 flex flex-1 flex-col">
         <header className="shrink-0">
           <nav
-            aria-label="Global"
+            aria-label={t("globalAria")}
             className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
           >
             <div className="flex lg:flex-1">
@@ -39,22 +43,22 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
             <MobileMenu />
             <div className="hidden lg:flex lg:gap-x-12">
               {navigation.map((item) => (
-                <a
-                  key={item.name}
+                <Link
+                  key={item.key}
                   href={item.href}
                   className="text-sm/6 font-semibold text-foreground transition-colors hover:text-primary"
                 >
-                  {item.name}
-                </a>
+                  {t(item.key)}
+                </Link>
               ))}
             </div>
             <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-              <a
+              <Link
                 href="#"
                 className="inline-flex items-center gap-1 text-sm/6 font-semibold text-foreground transition-colors hover:text-primary"
               >
-                Log in <HiArrowLongRight className="size-4" aria-hidden />
-              </a>
+                {t("login")} <HiArrowLongRight className="size-4" aria-hidden />
+              </Link>
             </div>
           </nav>
         </header>

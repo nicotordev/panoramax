@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
+import { useTranslations } from "next-intl"
 import { Badge } from "../ui/badge"
 import { Card } from "../ui/card"
 import { getEventCardImageSrc } from "./event-card-utils"
@@ -19,6 +20,7 @@ export function EventGalleryCard({
   selectedId,
   onSelect,
 }: EventGalleryCardProps) {
+  const t = useTranslations("Common")
   const isSelected = selectedId === event.id
   const imageSrc = getEventCardImageSrc(event.imageUrl)
 
@@ -67,7 +69,7 @@ export function EventGalleryCard({
                 variant="secondary"
                 className="h-4 px-1.5 py-0 text-[10px]"
               >
-                {event.isFree ? "Free" : (event.priceText ?? "Paid")}
+                {event.isFree ? t("free") : (event.priceText ?? t("paid"))}
               </Badge>
             </div>
           </div>

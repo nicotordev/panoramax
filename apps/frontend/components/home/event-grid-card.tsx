@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
+import { useLocale, useTranslations } from "next-intl"
 import { AspectRatio } from "../ui/aspect-ratio"
 import { Badge } from "../ui/badge"
 import {
@@ -25,6 +26,8 @@ export function EventGridCard({
   selectedId,
   onSelect,
 }: EventGridCardProps) {
+  const locale = useLocale()
+  const t = useTranslations("Common")
   const isSelected = selectedId === event.id
   const imageSrc = getEventCardImageSrc(event.imageUrl)
 
@@ -49,7 +52,7 @@ export function EventGridCard({
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="line-clamp-1">{event.title}</CardTitle>
           <Badge variant={event.isFree ? "secondary" : "default"}>
-            {event.isFree ? "Free" : (event.priceText ?? "Paid")}
+            {event.isFree ? t("free") : (event.priceText ?? t("paid"))}
           </Badge>
         </div>
         {event.subtitle && (
@@ -66,7 +69,7 @@ export function EventGridCard({
           </span>
           <span>·</span>
           <span className="shrink-0">
-            {new Date(event.startAt).toLocaleString([], {
+            {new Date(event.startAt).toLocaleString(locale, {
               dateStyle: "medium",
               timeStyle: event.allDay ? undefined : "short",
             })}

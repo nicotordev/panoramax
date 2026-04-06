@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "Global",
+    "home": "Home",
+    "events": "Events",
+    "thisWeek": "This week",
+    "free": "Free",
+    "login": "Log in",
+    "openMainMenu": "Open main menu",
+    "closeMenu": "Close menu"
+  },
+  "HomePage": {
+    "liveEvents": "Live events",
+    "viewAll": "View all",
+    "titleStart": "Discover the best",
+    "titleHighlight": "of Chile",
+    "description": "Explore culture, music and entertainment. From intimate theaters to massive festivals, find your next unforgettable moment.",
+    "viewDetails": "View details",
+    "viewEvents": "View events",
+    "exploreCategories": "Explore categories",
+    "stats": {
+      "events": "Events in the guide",
+      "communes": "Communes in the guide",
+      "free": "Free in the guide"
+    },
+    "carouselAria": "Event carousel",
+    "previousEvent": "Previous event",
+    "nextEvent": "Next event",
+    "goToEvent": "Go to event {index}",
+    "emptyTitle": "There are no events to show yet",
+    "emptyDescription": "Check back soon or explore the full listing.",
+    "goToEvents": "Go to events"
+  },
+  "Common": {
+    "free": "Free",
+    "paid": "Paid"
+  }
+}

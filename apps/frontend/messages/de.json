@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "Globale Navigation",
+    "home": "Startseite",
+    "events": "Veranstaltungen",
+    "thisWeek": "Diese Woche",
+    "free": "Kostenlos",
+    "login": "Anmelden",
+    "openMainMenu": "Hauptmenü öffnen",
+    "closeMenu": "Menü schließen"
+  },
+  "HomePage": {
+    "liveEvents": "Live-Events",
+    "viewAll": "Alle ansehen",
+    "titleStart": "Entdecke das Beste",
+    "titleHighlight": "aus Chile",
+    "description": "Entdecke Kultur, Musik und Unterhaltung. Von intimen Theatern bis zu großen Festivals findest du deinen nächsten unvergesslichen Moment.",
+    "viewDetails": "Details ansehen",
+    "viewEvents": "Events ansehen",
+    "exploreCategories": "Kategorien entdecken",
+    "stats": {
+      "events": "Events im Guide",
+      "communes": "Kommunen im Guide",
+      "free": "Kostenlos im Guide"
+    },
+    "carouselAria": "Event-Karussell",
+    "previousEvent": "Vorheriges Event",
+    "nextEvent": "Nächstes Event",
+    "goToEvent": "Zu Event {index} wechseln",
+    "emptyTitle": "Noch keine Events zum Anzeigen",
+    "emptyDescription": "Schau bald wieder vorbei oder erkunde die vollständige Liste.",
+    "goToEvents": "Zu den Events"
+  },
+  "Common": {
+    "free": "Kostenlos",
+    "paid": "Kostenpflichtig"
+  }
+}

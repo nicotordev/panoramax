@@ -1,0 +1,38 @@
+{
+  "Navigation": {
+    "globalAria": "Navigazione globale",
+    "home": "Home",
+    "events": "Eventi",
+    "thisWeek": "Questa settimana",
+    "free": "Gratis",
+    "login": "Accedi",
+    "openMainMenu": "Apri il menu principale",
+    "closeMenu": "Chiudi il menu"
+  },
+  "HomePage": {
+    "liveEvents": "Eventi dal vivo",
+    "viewAll": "Vedi tutto",
+    "titleStart": "Scopri il meglio",
+    "titleHighlight": "del Cile",
+    "description": "Esplora cultura, musica e intrattenimento. Dai teatri intimi ai festival enormi, trova il tuo prossimo momento indimenticabile.",
+    "viewDetails": "Vedi dettagli",
+    "viewEvents": "Vedi eventi",
+    "exploreCategories": "Esplora categorie",
+    "stats": {
+      "events": "Eventi nella guida",
+      "communes": "Comuni nella guida",
+      "free": "Gratis nella guida"
+    },
+    "carouselAria": "Carosello eventi",
+    "previousEvent": "Evento precedente",
+    "nextEvent": "Evento successivo",
+    "goToEvent": "Vai all'evento {index}",
+    "emptyTitle": "Non ci sono ancora eventi da mostrare",
+    "emptyDescription": "Torna presto oppure esplora l'elenco completo.",
+    "goToEvents": "Vai agli eventi"
+  },
+  "Common": {
+    "free": "Gratis",
+    "paid": "A pagamento"
+  }
+}
