@@ -1,9 +1,9 @@
+import Search from "@/components/search"
 import { navigation } from "@/data/misc.data"
 import { Link } from "@/i18n/navigation"
 import type { Event, EventsListMeta } from "@/types/api"
 import { useTranslations } from "next-intl"
 import { HiArrowLongRight } from "react-icons/hi2"
-import Search from "@/components/search"
 import Logo from "../common/logo"
 import HeroEventsShowcase from "./hero-events-showcase"
 import MobileMenu from "./mobile-menu"
@@ -85,7 +85,7 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
                   primaryText: "title",
                   secondaryText: "description",
                   tertiaryText: "summary",
-                  url: "",
+                  slug: "slug",
                   image: "imageUrl",
                 }}
                 darkMode={false}

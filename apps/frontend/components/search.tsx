@@ -15,14 +15,16 @@ import {
 } from "react-instantsearch"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation"
+import { cn } from "@/lib/utils"
+import Image from "next/image"
+import Link from "next/link"
 
 type SearchAttributes = {
   primaryText: string
   secondaryText?: string
   tertiaryText?: string
-  url?: string
+  slug?: string
   image?: string
 }
 
@@ -58,9 +60,9 @@ function getByPath<T = unknown>(obj: unknown, path?: string): T | undefined {
   return current as T | undefined
 }
 
-function normalizeUrl(url?: string) {
-  if (!url) return undefined
-  const trimmed = url.trim()
+function normalizeSlug(slug?: string) {
+  if (!slug) return undefined
+  const trimmed = slug.trim()
   return trimmed.length > 0 ? trimmed : undefined
 }
 
@@ -201,7 +203,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="h-full w-full overflow-hidden bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 md:h-auto md:max-h-[80vh] md:w-[90%] md:max-w-[720px] md:rounded-xl"
+        className="h-full w-full animate-in overflow-hidden bg-background shadow-2xl fade-in-0 zoom-in-95 md:h-auto md:max-h-[80vh] md:w-[90%] md:max-w-[720px] md:rounded-xl"
         onClick={(event) => event.stopPropagation()}
       >
         {children}
@@ -318,8 +320,11 @@ function SearchResults({
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const getHitUrl = (hit: Hit<BaseHit>) =>
-    normalizeUrl(getByPath<string>(hit, attributes.url))
+  const getHitHref = (hit: Hit<BaseHit>) => {
+    const slug = normalizeSlug(getByPath<string>(hit, attributes.slug))
+    if (!slug) return undefined
+    return `/events/${slug}`
+  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -343,7 +348,7 @@ function SearchResults({
       role="listbox"
     >
       {items.map((hit, index) => {
-        const url = getHitUrl(hit)
+        const href = getHitHref(hit)
         const imageUrl = getByPath<string>(hit, attributes.image)
         const primaryText = getByPath<string>(hit, attributes.primaryText) || ""
         const isSelected = selectedIndex === index
@@ -354,10 +359,9 @@ function SearchResults({
             {imageUrl ? (
               <div className="flex h-[100px] w-[100px] flex-[0_0_100px] items-center justify-center self-start overflow-hidden rounded-sm bg-background">
                 {hasImage ? (
-                  // The registry component renders remote Algolia images directly.
-                  // Using `img` avoids requiring extra Next image remote config.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
+                    width={100}
+                    height={100}
                     src={imageUrl}
                     alt={primaryText}
                     className="h-full w-full rounded-sm object-cover"
@@ -410,7 +414,7 @@ function SearchResults({
           onMouseMove: () => onHoverIndex(index),
         }
 
-        if (!url) {
+        if (!href) {
           return (
             <div key={hit.objectID} {...commonProps}>
               {content}
@@ -419,16 +423,16 @@ function SearchResults({
         }
 
         return (
-          <a
+          <Link
             key={hit.objectID}
-            href={url}
+            href={href}
             target={openResultsInNewTab ? "_blank" : undefined}
             rel={openResultsInNewTab ? "noopener noreferrer" : undefined}
             onClick={() => sendEvent("click", hit, "Hit Clicked")}
             {...commonProps}
           >
             {content}
-          </a>
+          </Link>
         )
       })}
     </div>
@@ -512,8 +516,11 @@ function SearchDialog({
   const { results } = useInstantSearch()
   const { items, sendEvent } = useHits()
 
-  const getHitUrl = (hit: Hit<BaseHit>) =>
-    normalizeUrl(getByPath<string>(hit, config.attributes.url))
+  const getHitHref = (hit: Hit<BaseHit>) => {
+    const slug = normalizeSlug(getByPath<string>(hit, config.attributes.slug))
+    if (!slug) return undefined
+    return `/events/${slug}`
+  }
 
   const {
     selectedIndex,
@@ -524,7 +531,7 @@ function SearchDialog({
     resetSelection,
   } = useKeyboardNavigation(
     items,
-    getHitUrl,
+    getHitHref,
     config.openResultsInNewTab ?? true
   )
 
