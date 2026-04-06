@@ -31,11 +31,12 @@ RUN pnpm --filter @panoramax/cron build
 
 FROM node:20-alpine AS runner
 
-WORKDIR /app
+WORKDIR /app/apps/cron
 
 ENV NODE_ENV=production
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules /app/node_modules
+COPY --from=deps /app/apps/cron/node_modules ./node_modules
 COPY --from=deps /app/apps/cron/package.json ./package.json
 COPY --from=build /app/apps/cron/dist ./dist
 
