@@ -8,8 +8,38 @@ export interface EventTier {
   currency: string
   sortOrder: number
   rawText?: string | null
+  translation?: EventTierTranslation | null
   createdAt: string
   updatedAt: string
+}
+
+export interface EventTierTranslation {
+  locale: "de" | "en" | "es" | "es419" | "fr" | "it" | "zh"
+  name?: string | null
+  rawText?: string | null
+  autoTranslated?: boolean
+  sourceLocale?: string | null
+  provider?: string | null
+  version?: number
+  updatedAt?: string
+}
+
+export interface EventTranslation {
+  locale: "de" | "en" | "es" | "es419" | "fr" | "it" | "zh"
+  title?: string | null
+  subtitle?: string | null
+  summary?: string | null
+  description?: string | null
+  dateText?: string | null
+  venueName?: string | null
+  locationNotes?: string | null
+  priceText?: string | null
+  availabilityText?: string | null
+  autoTranslated?: boolean
+  sourceLocale?: string | null
+  provider?: string | null
+  version?: number
+  updatedAt?: string
 }
 
 // Event model (as per schema.prisma)
@@ -85,6 +115,7 @@ export interface Event {
   qualityScore?: number | null
   needsReview: boolean
   reviewNotes?: string | null
+  translation?: EventTranslation | null
   createdAt: string
   updatedAt: string
 }
@@ -94,6 +125,10 @@ export type EventsListMeta = {
   total: number
   page: number
   limit: number
+  weekRange?: {
+    start: string
+    end: string
+  }
   stats: {
     communes: number
     free: number

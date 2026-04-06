@@ -29,7 +29,14 @@
     "goToEvent": "Aller à l'événement {index}",
     "emptyTitle": "Aucun événement à afficher pour le moment",
     "emptyDescription": "Revenez bientôt ou explorez la liste complète.",
-    "goToEvents": "Aller aux événements"
+    "goToEvents": "Aller aux événements",
+    "searchEvents": "Rechercher des événements",
+    "pickADate": "Sélectionner une date",
+    "selectedForTheWeek": "Sélection de la semaine",
+    "quickMapOfWhatToSeeThisWeek": "Aperçu rapide de ce qu'il faut voir cette semaine",
+    "bentoGridIntro": "Un aperçu soigneusement sélectionné des événements à ne pas manquer en ce moment.",
+    "viewCompleteAgenda": "Voir l'agenda complet",
+    "event": "Événement"
   },
   "Common": {
     "free": "Gratuit",

@@ -1,5 +1,6 @@
 "use client"
 
+import { EVENT_PLACEHOLDER_IMAGE } from "@/constants/common.constants"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
 import { formatCategoryLabel, formatEventWhen } from "@/lib/home-showcase.utils"
 import { cn } from "@/lib/utils"
@@ -8,7 +9,6 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
-import { EVENT_PLACEHOLDER_IMAGE } from "@/constants/common.constants"
 
 const positionStyles: Record<EventStackCardProps["position"], string> = {
   left: "w-[min(75vw,230px)] border-border/30 shadow-lg",
@@ -25,6 +25,7 @@ export function EventStackCard({
   direction,
 }: EventStackCardProps) {
   const [imageSrc, setImageSrc] = useState(getEventCardImageSrc(event.imageUrl))
+  const displayTitle = event.translation?.title || event.title
 
   const variants = {
     left: {
@@ -79,7 +80,7 @@ export function EventStackCard({
       style={{ zIndex }}
     >
       <Link
-        href={`/events/${event.slug}`}
+        href={`/events/${event.slug || event.id}`}
         className="flex items-center justify-center"
       >
         <div
@@ -90,7 +91,7 @@ export function EventStackCard({
         >
           <Image
             src={imageSrc}
-            alt={event.title}
+            alt={displayTitle}
             fill
             className="pointer-events-none object-cover"
             priority={position === "center"}
@@ -106,7 +107,7 @@ export function EventStackCard({
                 {formatCategoryLabel(event.categoryPrimary)}
               </span>
               <p className="line-clamp-2 text-sm leading-snug font-bold text-card-foreground">
-                {event.title}
+                {displayTitle}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {formatEventWhen(event, locale)}

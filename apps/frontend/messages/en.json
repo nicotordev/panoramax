@@ -29,7 +29,14 @@
     "goToEvent": "Go to event {index}",
     "emptyTitle": "There are no events to show yet",
     "emptyDescription": "Check back soon or explore the full listing.",
-    "goToEvents": "Go to events"
+    "goToEvents": "Go to events",
+    "searchEvents": "Search for events",
+    "pickADate": "Pick a date",
+    "selectedForTheWeek": "Selected for the week",
+    "quickMapOfWhatToSeeThisWeek": "Quick map of what to see this week",
+    "bentoGridIntro": "A curated snapshot of standout events happening right now.",
+    "viewCompleteAgenda": "View complete agenda",
+    "event": "Event"
   },
   "Common": {
     "free": "Free",

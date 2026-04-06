@@ -6,6 +6,7 @@ import eventsController from "../../controllers/events.controller.js";
 import {
   eventCreateBodySchema,
   eventIdParamSchema,
+  eventLocaleQuerySchema,
   eventUpdateBodySchema,
   listEventsQuerySchema,
 } from "../../lib/validation/events.schema.js";
@@ -23,6 +24,7 @@ eventsRoutes.get(
 eventsRoutes.post(
   "/",
   requireApiKey([...apiAccess.eventsWrite]),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
   zValidator("json", eventCreateBodySchema, zodValidationHook),
   eventsController.create,
 );
@@ -36,6 +38,7 @@ eventsRoutes.get(
 eventsRoutes.get(
   "/:id",
   zValidator("param", eventIdParamSchema, zodValidationHook),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
   eventsController.getById,
 );
 
@@ -43,6 +46,7 @@ eventsRoutes.patch(
   "/:id",
   requireApiKey([...apiAccess.eventsWrite]),
   zValidator("param", eventIdParamSchema, zodValidationHook),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
   zValidator("json", eventUpdateBodySchema, zodValidationHook),
   eventsController.update,
 );
@@ -51,6 +55,7 @@ eventsRoutes.delete(
   "/:id",
   requireApiKey([...apiAccess.eventsWrite]),
   zValidator("param", eventIdParamSchema, zodValidationHook),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
   eventsController.remove,
 );
 

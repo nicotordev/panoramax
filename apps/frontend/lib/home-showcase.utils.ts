@@ -11,7 +11,7 @@ export function formatCategoryLabel(cat: Event["categoryPrimary"]): string {
 }
 
 export function formatEventWhen(event: Event, locale: string): string {
-  const text = event.dateText?.trim()
+  const text = event.translation?.dateText?.trim() || event.dateText?.trim()
   if (text) return text
 
   return new Date(event.startAt).toLocaleString(locale, {
@@ -21,6 +21,10 @@ export function formatEventWhen(event: Event, locale: string): string {
 }
 
 export function formatEventLocation(event: Event): string {
-  const parts = [event.venueName, event.commune || event.city].filter(Boolean)
+  const translatedVenue = event.translation?.venueName?.trim()
+  const parts = [
+    translatedVenue || event.venueName,
+    event.commune || event.city,
+  ].filter(Boolean)
   return parts.join(", ")
 }

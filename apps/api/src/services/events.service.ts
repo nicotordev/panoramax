@@ -1,4 +1,5 @@
 import { Prisma } from "../generated/prisma/client.js";
+import { TranslationLocale } from "../generated/prisma/enums.js";
 import type { EventModel } from "../generated/prisma/models/Event.js";
 import { serializeEvent } from "../lib/events/serialize-event.js";
 import { buildEventSlug } from "../lib/ingestion/core/shared.js";
@@ -52,6 +53,99 @@ function toTierCreateData(
   }));
 }
 
+type EventWithLocalizedRelations = Prisma.EventGetPayload<{
+  include: {
+    translations: true;
+    tiers: {
+      orderBy: { sortOrder: "asc" };
+      include: { translations: true };
+    };
+  };
+}>;
+
+function applyLocaleTranslations(
+  event: EventWithLocalizedRelations,
+  locale?: TranslationLocale,
+) {
+  const serialized = serializeEvent(event);
+  if (!locale) {
+    return serialized;
+  }
+
+  const translation =
+    event.translations.find((t) => t.locale === locale) ?? null;
+  const tierTranslationsByTierId = new Map(
+    event.tiers.map((tier) => {
+      const translation =
+        tier.translations.find((t) => t.locale === locale) ?? null;
+      return [tier.id, translation] as const;
+    }),
+  );
+
+  const localizedTiers = serialized.tiers.map((tier) => {
+    const tierTranslation = tierTranslationsByTierId.get(tier.id) ?? null;
+
+    if (!tierTranslation) {
+      return tier;
+    }
+
+    return {
+      ...tier,
+      name: tierTranslation.name ?? tier.name,
+      rawText: tierTranslation.rawText ?? tier.rawText,
+      translation: {
+        locale: tierTranslation.locale,
+        name: tierTranslation.name,
+        rawText: tierTranslation.rawText,
+        autoTranslated: tierTranslation.autoTranslated,
+        sourceLocale: tierTranslation.sourceLocale,
+        provider: tierTranslation.provider,
+        version: tierTranslation.version,
+        updatedAt: tierTranslation.updatedAt,
+      },
+    };
+  });
+
+  if (!translation) {
+    return {
+      ...serialized,
+      tiers: localizedTiers,
+    };
+  }
+
+  return {
+    ...serialized,
+    title: translation.title ?? serialized.title,
+    subtitle: translation.subtitle ?? serialized.subtitle,
+    summary: translation.summary ?? serialized.summary,
+    description: translation.description ?? serialized.description,
+    dateText: translation.dateText ?? serialized.dateText,
+    venueName: translation.venueName ?? serialized.venueName,
+    locationNotes: translation.locationNotes ?? serialized.locationNotes,
+    priceText: translation.priceText ?? serialized.priceText,
+    availabilityText:
+      translation.availabilityText ?? serialized.availabilityText,
+    tiers: localizedTiers,
+    translation: {
+      locale: translation.locale,
+      title: translation.title,
+      subtitle: translation.subtitle,
+      summary: translation.summary,
+      description: translation.description,
+      dateText: translation.dateText,
+      venueName: translation.venueName,
+      locationNotes: translation.locationNotes,
+      priceText: translation.priceText,
+      availabilityText: translation.availabilityText,
+      autoTranslated: translation.autoTranslated,
+      sourceLocale: translation.sourceLocale,
+      provider: translation.provider,
+      version: translation.version,
+      updatedAt: translation.updatedAt,
+    },
+  };
+}
+
 class EventsService {
   public async list(query: ListEventsQuery) {
     const {
@@ -63,6 +157,7 @@ class EventsService {
       source,
       status,
       categoryPrimary,
+      locale,
     } = query;
     const skip = (page - 1) * limit;
 
@@ -81,7 +176,19 @@ class EventsService {
         orderBy: { startAt: "desc" },
         skip,
         take: limit,
-        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          translations: locale
+            ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+            : true,
+          tiers: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              translations: locale
+                ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+                : true,
+            },
+          },
+        },
       }),
       prisma.event.count({ where }),
       prisma.event.count({
@@ -98,7 +205,7 @@ class EventsService {
     ]);
 
     return {
-      items: rows.map((row) => serializeEvent(row)),
+      items: rows.map((row) => applyLocaleTranslations(row, locale)),
       total,
       page,
       limit,
@@ -119,6 +226,7 @@ class EventsService {
     const source = query?.source;
     const status = query?.status;
     const categoryPrimary = query?.categoryPrimary;
+    const locale = query?.locale;
     const skip = (page - 1) * limit;
 
     // Upcoming events only: from today (now) until the end of NEXT WEEK (Sunday 23:59:59).
@@ -162,7 +270,19 @@ class EventsService {
         orderBy: { startAt: "asc" },
         skip,
         take: limit,
-        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          translations: locale
+            ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+            : true,
+          tiers: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              translations: locale
+                ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+                : true,
+            },
+          },
+        },
       }),
       prisma.event.count({ where }),
       prisma.event.count({
@@ -179,7 +299,7 @@ class EventsService {
     ]);
 
     return {
-      items: rows.map((row) => serializeEvent(row)),
+      items: rows.map((row) => applyLocaleTranslations(row, locale)),
       total,
       page,
       limit,
@@ -197,15 +317,28 @@ class EventsService {
 
   public async getById(
     id: string,
+    locale?: TranslationLocale,
   ): Promise<ReturnType<typeof serializeEvent> | null> {
     const row = await prisma.event.findUnique({
       where: { id },
-      include: { tiers: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        translations: locale
+          ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+          : true,
+        tiers: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            translations: locale
+              ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+              : true,
+          },
+        },
+      },
     });
-    return row ? serializeEvent(row) : null;
+    return row ? applyLocaleTranslations(row, locale) : null;
   }
 
-  public async create(data: EventCreateInput) {
+  public async create(data: EventCreateInput, locale?: TranslationLocale) {
     const { tiers, ...eventData } = data;
     const row = await prisma.$transaction(async (tx) => {
       const created = await tx.event.create({
@@ -217,13 +350,29 @@ class EventsService {
       }
       return tx.event.findUniqueOrThrow({
         where: { id: created.id },
-        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          translations: locale
+            ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+            : true,
+          tiers: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              translations: locale
+                ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+                : true,
+            },
+          },
+        },
       });
     });
-    return serializeEvent(row);
+    return applyLocaleTranslations(row, locale);
   }
 
-  public async update(id: string, data: EventUpdateInput) {
+  public async update(
+    id: string,
+    data: EventUpdateInput,
+    locale?: TranslationLocale,
+  ) {
     const { rawPayload, tiers, ...rest } = data;
     const slug =
       data.slug ??
@@ -256,10 +405,22 @@ class EventsService {
       }
       return tx.event.findUniqueOrThrow({
         where: { id },
-        include: { tiers: { orderBy: { sortOrder: "asc" } } },
+        include: {
+          translations: locale
+            ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+            : true,
+          tiers: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              translations: locale
+                ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+                : true,
+            },
+          },
+        },
       });
     });
-    return serializeEvent(row);
+    return applyLocaleTranslations(row, locale);
   }
 
   public async delete(id: string): Promise<EventModel> {

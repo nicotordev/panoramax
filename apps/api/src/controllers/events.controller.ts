@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type {
   EventCreateInput,
+  EventLocaleQuery,
   EventUpdateInput,
   ListEventsQuery,
 } from "../lib/validation/events.schema.js";
@@ -29,7 +30,8 @@ class EventsController {
   public getById = async (c: Context) => {
     try {
       const { id } = validParam<{ id: string }>(c);
-      const event = await eventsService.getById(id);
+      const { locale } = validQuery<EventLocaleQuery>(c);
+      const event = await eventsService.getById(id, locale);
       if (!event) {
         throw new HTTPException(404, { message: "Event not found" });
       }
@@ -46,8 +48,9 @@ class EventsController {
 
   public create = async (c: Context) => {
     try {
+      const { locale } = validQuery<EventLocaleQuery>(c);
       const json = validJson<EventCreateInput>(c);
-      const event = await eventsService.create(json);
+      const event = await eventsService.create(json, locale);
       const body = responseEnhancer.created(
         event,
         "Event created successfully",
@@ -64,9 +67,10 @@ class EventsController {
 
   public update = async (c: Context) => {
     try {
+      const { locale } = validQuery<EventLocaleQuery>(c);
       const { id } = validParam<{ id: string }>(c);
       const json = validJson<EventUpdateInput>(c);
-      const event = await eventsService.update(id, json);
+      const event = await eventsService.update(id, json, locale);
       const body = responseEnhancer.ok(event, "Event updated successfully");
       return c.json(body, body.status as ContentfulStatusCode);
     } catch (error) {
@@ -100,7 +104,10 @@ class EventsController {
     try {
       const query = validQuery<ListEventsQuery>(c);
       const result = await eventsService.listCurrentWeekEvents(query);
-      const body = responseEnhancer.ok(result, "Current week events listed successfully");
+      const body = responseEnhancer.ok(
+        result,
+        "Current week events listed successfully",
+      );
       return c.json(body, body.status as ContentfulStatusCode);
     } catch (error) {
       const body = responseEnhancer.errorHandler(

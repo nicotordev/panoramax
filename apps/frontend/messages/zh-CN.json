@@ -29,7 +29,14 @@
     "goToEvent": "前往第 {index} 个活动",
     "emptyTitle": "暂时没有可展示的活动",
     "emptyDescription": "请稍后再来，或查看完整活动列表。",
-    "goToEvents": "前往活动页"
+    "goToEvents": "前往活动页",
+    "searchEvents": "搜索活动",
+    "pickADate": "选择日期",
+    "selectedForTheWeek": "本周精选",
+    "quickMapOfWhatToSeeThisWeek": "本周看点速览",
+    "bentoGridIntro": "精心挑选的近期亮点活动，一眼快速了解。",
+    "viewCompleteAgenda": "查看完整日程",
+    "event": "活动"
   },
   "Common": {
     "free": "免费",

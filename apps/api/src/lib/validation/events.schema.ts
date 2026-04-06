@@ -4,6 +4,7 @@ import {
   CategoryPrimary,
   EventStatus,
   SourceType,
+  TranslationLocale,
 } from "../../generated/prisma/enums.js";
 
 const decimalNullable = z.union([z.number(), z.string()]).nullish();
@@ -97,6 +98,11 @@ export const listEventsQuerySchema = z.object({
   source: z.string().optional(),
   status: z.nativeEnum(EventStatus).optional(),
   categoryPrimary: z.nativeEnum(CategoryPrimary).optional(),
+  locale: z.nativeEnum(TranslationLocale).optional(),
+});
+
+export const eventLocaleQuerySchema = z.object({
+  locale: z.nativeEnum(TranslationLocale).optional(),
 });
 
 export const eventIdParamSchema = z.object({
@@ -107,3 +113,4 @@ export type EventCreateInput = z.infer<typeof eventCreateBodySchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateBodySchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
 export type EventTierInput = z.infer<typeof eventTierSchema>;
+export type EventLocaleQuery = z.infer<typeof eventLocaleQuerySchema>;

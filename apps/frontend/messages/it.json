@@ -29,7 +29,14 @@
     "goToEvent": "Vai all'evento {index}",
     "emptyTitle": "Non ci sono ancora eventi da mostrare",
     "emptyDescription": "Torna presto oppure esplora l'elenco completo.",
-    "goToEvents": "Vai agli eventi"
+    "goToEvents": "Vai agli eventi",
+    "searchEvents": "Cerca eventi",
+    "pickADate": "Seleziona data",
+    "selectedForTheWeek": "Selezionati per la settimana",
+    "quickMapOfWhatToSeeThisWeek": "Panoramica rapida di cosa vedere questa settimana",
+    "bentoGridIntro": "Una selezione curata degli eventi da non perdere in questi giorni.",
+    "viewCompleteAgenda": "Vedi agenda completa",
+    "event": "Evento"
   },
   "Common": {
     "free": "Gratis",
