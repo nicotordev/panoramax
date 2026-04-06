@@ -1,6 +1,18 @@
-import type { Event } from "../generated/prisma/client.js";
+import { Prisma } from "../generated/prisma/client.js";
 import algolia from "../lib/algolia.js";
 import { prisma } from "../lib/prisma.js";
+
+type EventWithAllRelations = Prisma.EventGetPayload<{
+  include: {
+    translations: true;
+    tiers: {
+      orderBy: { sortOrder: "asc" };
+      include: { translations: true };
+    };
+    canonicalEvent: true;
+    duplicateEvents: true;
+  };
+}>;
 
 class CronService {
   /**
@@ -14,11 +26,24 @@ class CronService {
     try {
       while (true) {
         // Use keyset pagination for efficient batching
-        const events: Event[] = await prisma.event.findMany({
+        const events: EventWithAllRelations[] = await prisma.event.findMany({
           where: lastId !== undefined ? { id: { lt: lastId } } : undefined,
           take: batchSize,
           orderBy: {
             id: "desc",
+          },
+          include: {
+            translations: true,
+            tiers: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              include: {
+                translations: true,
+              },
+            },
+            canonicalEvent: true,
+            duplicateEvents: true,
           },
         });
 
@@ -34,8 +59,7 @@ class CronService {
 
       return true;
     } catch (error) {
-      // Optionally log the error somewhere
-      // console.error('Failed to sync events to Algolia:', error);
+      console.error("Failed to sync events to Algolia:", error);
       return false;
     }
   }
