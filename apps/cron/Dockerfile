@@ -39,4 +39,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/cron/package.json ./package.json
 COPY --from=build /app/apps/cron/dist ./dist
 
-CMD ["node", "dist/src/index.js"]
+# Accept .env file if present at runtime (best practice for 12-factor apps)
+# (Leaving for context if anyone wants to mount env files in Docker runs)
+# ENV API_URL=""
+# ENV API_KEY=""
+
+CMD ["node", "dist/index.js"]
