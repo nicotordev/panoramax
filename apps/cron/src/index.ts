@@ -1,5 +1,14 @@
 import "dotenv/config";
 
+type CronApiResponse = {
+  success?: boolean;
+  message?: string;
+  status?: number;
+  data?: {
+    started?: boolean;
+  };
+};
+
 function requireEnv(
   name: "API_URL" | "API_KEY" | "METHOD" | "BODY"
 ): string {
@@ -50,11 +59,32 @@ async function fetchApiData(): Promise<unknown> {
   return response.json();
 }
 
+function isAcceptedButNotStarted(data: unknown): data is CronApiResponse {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const response = data as CronApiResponse;
+  return (
+    response.success === true &&
+    response.status === 202 &&
+    response.data?.started === false
+  );
+}
+
 async function main(): Promise<number> {
   try {
     console.log(`[${new Date().toISOString()}] Starting cron job...`);
     const data = await fetchApiData();
     console.log(`[${new Date().toISOString()}] Fetched data:`, data);
+
+    if (isAcceptedButNotStarted(data)) {
+      console.error(
+        `[${new Date().toISOString()}] Cron request was accepted but no ingestion started: ${data.message ?? "active task already running"}`
+      );
+      return 1;
+    }
+
     console.log(`[${new Date().toISOString()}] Cron job completed successfully.`);
     return 0;
   } catch (error) {

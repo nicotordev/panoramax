@@ -8,6 +8,7 @@ import taskMonitorService from "./task-monitor.service.js";
 /** HTTP source endpoints always persist scraped events (same policy as ingest scripts). */
 const PERSIST = true as const;
 const INGEST_ALL_PAGES_TASK_TYPE = "sources:ingest-all-pages";
+const TASK_HEARTBEAT_INTERVAL_MS = 60_000;
 
 export type IngestAllPagesInput = {
   sources?: SourceKey[];
@@ -183,21 +184,38 @@ class SourcesService {
     }
 
     const task = startedTask.task;
+    let latestSummaries: IngestAllPagesSummary[] = [];
+    let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
 
     const jobPromise = taskMonitorService
       .markRunning<IngestAllPagesInput, IngestAllPagesSummary[]>(task.id)
-      .then(() =>
-        this.ingestAllPages(input, {
+      .then(() => {
+        heartbeatTimer = setInterval(() => {
+          void taskMonitorService
+            .markHeartbeat(task.id, [...latestSummaries])
+            .catch(() => undefined);
+        }, TASK_HEARTBEAT_INTERVAL_MS);
+
+        heartbeatTimer.unref?.();
+
+        return this.ingestAllPages(input, {
           onProgress: async (summaries) => {
+            latestSummaries = [...summaries];
             await taskMonitorService.markHeartbeat(task.id, summaries);
           },
-        }),
-      )
+        });
+      })
       .then(async (summaries) => {
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer);
+        }
         await taskMonitorService.markSucceeded(task.id, summaries);
         return summaries;
       })
       .catch(async (error: unknown) => {
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer);
+        }
         await taskMonitorService.markFailed(
           task.id,
           error instanceof Error ? error.message : String(error),

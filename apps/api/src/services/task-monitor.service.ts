@@ -40,6 +40,10 @@ function activeTaskKey(taskType: string) {
   return `${ACTIVE_TASK_KEY_PREFIX}${taskType}`;
 }
 
+function isHeartbeatExpired(heartbeatAt: string) {
+  return Date.now() - new Date(heartbeatAt).getTime() > STALE_AFTER_MS;
+}
+
 async function writeTask<TInput, TOutput>(task: TaskRecord<TInput, TOutput>) {
   const redis = await getRedisClient();
   await redis.set(taskKey(task.id), JSON.stringify(task), {
@@ -67,40 +71,33 @@ class TaskMonitorService {
     const redis = await getRedisClient();
     const id = randomUUID();
     const activeKey = activeTaskKey(taskType);
-    const acquired = await redis.set(activeKey, id, {
-      NX: true,
-      EX: ACTIVE_LOCK_TTL_SECONDS,
-    });
+    const acquired = await this.acquireActiveLock(activeKey, id);
 
-    if (acquired !== "OK") {
-      const activeTaskId = await redis.get(activeKey);
-      const activeTask = activeTaskId
-        ? await this.getTask<TInput, TOutput>(activeTaskId)
-        : null;
-      return {
-        started: false as const,
-        task: activeTask,
-      };
+    if (acquired === "OK") {
+      return this.createQueuedTask(id, taskType, input);
     }
 
-    const task: TaskRecord<TInput, TOutput> = {
-      id,
-      type: taskType,
-      status: "queued",
-      createdAt: new Date().toISOString(),
-      startedAt: null,
-      heartbeatAt: null,
-      finishedAt: null,
-      input,
-      output: null,
-      error: null,
-    };
+    const activeTaskId = await redis.get(activeKey);
+    const recovered = activeTaskId
+      ? await this.tryRecoverExpiredActiveTask<TInput, TOutput>(
+          taskType,
+          activeTaskId,
+        )
+      : true;
 
-    await writeTask(task);
+    if (recovered) {
+      const reacquired = await this.acquireActiveLock(activeKey, id);
+      if (reacquired === "OK") {
+        return this.createQueuedTask(id, taskType, input);
+      }
+    }
 
+    const activeTask = activeTaskId
+      ? await this.getTask<TInput, TOutput>(activeTaskId)
+      : null;
     return {
-      started: true as const,
-      task,
+      started: false as const,
+      task: activeTask,
     };
   }
 
@@ -212,8 +209,7 @@ class TaskMonitorService {
     }
 
     if (task.status === "running" && task.heartbeatAt) {
-      const age = Date.now() - new Date(task.heartbeatAt).getTime();
-      if (age > STALE_AFTER_MS) {
+      if (isHeartbeatExpired(task.heartbeatAt)) {
         const activeTaskId = await redis.get(activeTaskKey(task.type));
         if (activeTaskId !== task.id) {
           const staleTask: TaskRecord<TInput, TOutput> = {
@@ -266,6 +262,75 @@ class TaskMonitorService {
     if (activeTaskId === taskId) {
       await redis.del(activeKey);
     }
+  }
+
+  private async acquireActiveLock(activeKey: string, taskId: string) {
+    const redis = await getRedisClient();
+    return await redis.set(activeKey, taskId, {
+      NX: true,
+      EX: ACTIVE_LOCK_TTL_SECONDS,
+    });
+  }
+
+  private async createQueuedTask<TInput, TOutput>(
+    id: string,
+    taskType: string,
+    input: TInput,
+  ) {
+    const task: TaskRecord<TInput, TOutput> = {
+      id,
+      type: taskType,
+      status: "queued",
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      heartbeatAt: null,
+      finishedAt: null,
+      input,
+      output: null,
+      error: null,
+    };
+
+    await writeTask(task);
+
+    return {
+      started: true as const,
+      task,
+    };
+  }
+
+  private async tryRecoverExpiredActiveTask<TInput, TOutput>(
+    taskType: string,
+    taskId: string,
+  ) {
+    const redis = await getRedisClient();
+    const rawTask = await redis.get(taskKey(taskId));
+    const task = parseTask<TInput, TOutput>(rawTask);
+
+    if (!task) {
+      const activeTaskId = await redis.get(activeTaskKey(taskType));
+      if (activeTaskId === taskId) {
+        await redis.del(activeTaskKey(taskType));
+      }
+      return true;
+    }
+
+    if (
+      task.status === "running" &&
+      task.heartbeatAt &&
+      isHeartbeatExpired(task.heartbeatAt)
+    ) {
+      const staleTask: TaskRecord<TInput, TOutput> = {
+        ...task,
+        status: "stale",
+        finishedAt: task.finishedAt ?? new Date().toISOString(),
+        error: task.error ?? "Task heartbeat expired",
+      };
+      await writeTask(staleTask);
+      await this.releaseLock(taskType, taskId);
+      return true;
+    }
+
+    return false;
   }
 }
 
