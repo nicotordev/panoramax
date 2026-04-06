@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { load } from "cheerio";
 import {
   Audience,
@@ -6,8 +7,10 @@ import {
 } from "../../../generated/prisma/enums.js";
 import { Prisma } from "../../../generated/prisma/client.js";
 import { scrapeHtml } from "../../brightdata.js";
+import { mirrorRemoteImageToR2 } from "../../images/mirror-remote-image.js";
 import { prisma } from "../../prisma.js";
 import { toPrismaJsonInput } from "../../prisma-json.js";
+import { isR2PublicUrl } from "../../storage/r2.js";
 import type {
   EventCreateInput,
   EventTierInput,
@@ -689,10 +692,57 @@ function toEventUncheckedUpdateInput(
   };
 }
 
+function buildSyntheticImageKey(event: Omit<EventCreateInput, "tiers">): string {
+  const stableInput = event.sourceEventId ?? event.dedupeKey ?? `${event.source}:${event.sourceUrl}`;
+
+  return createHash("sha256").update(stableInput).digest("hex").slice(0, 16);
+}
+
+async function resolveMirroredImageUrl(
+  event: Omit<EventCreateInput, "tiers">,
+): Promise<string | null> {
+  const imageUrl = event.imageUrl;
+
+  if (!imageUrl || imageUrl.startsWith("data:image/") || isR2PublicUrl(imageUrl)) {
+    return imageUrl ?? null;
+  }
+
+  const existing = await prisma.event.findUnique({
+    where: {
+      source_sourceUrl: {
+        source: event.source,
+        sourceUrl: event.sourceUrl,
+      },
+    },
+    select: {
+      id: true,
+      imageUrl: true,
+    },
+  });
+
+  try {
+    return await mirrorRemoteImageToR2({
+      imageUrl,
+      eventId: existing?.id ?? buildSyntheticImageKey(event),
+      source: event.source,
+      sourceUrl: event.sourceUrl,
+    });
+  } catch (error) {
+    console.warn(
+      `Failed to mirror image for ${event.source} ${event.sourceUrl}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+
+    return existing?.imageUrl && isR2PublicUrl(existing.imageUrl) ? existing.imageUrl : null;
+  }
+}
+
 export const upsertEvent = async (
   event: EventCreateInput & { tiers?: EventTierInput[] },
 ) => {
   const { tiers = [], ...eventData } = event;
+  const imageUrl = await resolveMirroredImageUrl(eventData);
 
   return prisma.$transaction(async (tx) => {
     const saved = await tx.event.upsert({
@@ -702,9 +752,15 @@ export const upsertEvent = async (
           sourceUrl: event.sourceUrl,
         },
       },
-      create: toEventUncheckedCreateInput(eventData),
+      create: toEventUncheckedCreateInput({
+        ...eventData,
+        imageUrl,
+      }),
       update: {
-        ...toEventUncheckedUpdateInput(eventData),
+        ...toEventUncheckedUpdateInput({
+          ...eventData,
+          imageUrl,
+        }),
         lastSeenAt: new Date(),
       },
     });

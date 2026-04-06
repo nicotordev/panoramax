@@ -18,13 +18,23 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
   return (
     <div className="relative w-full overflow-hidden bg-background">
       <video
-        src="/assets/video/11999048_1920_1080_25fps.mp4"
         autoPlay
         muted
         loop
         playsInline
+        preload="metadata"
+        aria-hidden
         className="absolute inset-0 z-10 h-full w-full object-cover"
-      />
+      >
+        <source
+          src="/assets/video/11999048_1920_1080_25fps.webm"
+          type="video/webm"
+        />
+        <source
+          src="/assets/video/11999048_1920_1080_25fps.optimized.mp4"
+          type="video/mp4"
+        />
+      </video>
       <div
         aria-hidden
         className="absolute inset-0 z-20 bg-linear-to-b from-background/85 via-background/45 to-background/20"
