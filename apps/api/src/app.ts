@@ -9,7 +9,7 @@ const app = new Hono<Env, Schema, "/">();
 
 app.use("*", ...httpSecurity);
 
-app.route("/v1", v1Routes);
+app.route("/api/v1", v1Routes);
 
 app.onError((err, c) => {
   console.error(err);
