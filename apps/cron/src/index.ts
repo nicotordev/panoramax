@@ -1,6 +1,8 @@
 import "dotenv/config";
 
-function requireEnv(name: "API_URL" | "API_KEY" | "METHOD"): string {
+function requireEnv(
+  name: "API_URL" | "API_KEY" | "METHOD" | "BODY"
+): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`${name} must be set in environment variables`);
@@ -13,6 +15,12 @@ async function fetchApiData(): Promise<unknown> {
   const apiKey = requireEnv("API_KEY");
   const method = process.env.METHOD || "GET";
 
+  let body: string | undefined = undefined;
+  if (process.env.BODY) {
+    body = process.env.BODY;
+    console.log(`[${new Date().toISOString()}] Using request body from env: ${body}`);
+  }
+
   console.log(`[${new Date().toISOString()}] Making request to: ${apiUrl}`);
   console.log(`[${new Date().toISOString()}] Using HTTP method: ${method}`);
 
@@ -22,6 +30,7 @@ async function fetchApiData(): Promise<unknown> {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
+    ...(body && { body }),
   });
 
   console.log(

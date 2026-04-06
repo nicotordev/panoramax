@@ -2,7 +2,9 @@ import type { Context, Env } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import { sourceKeys } from "../lib/ingestion/core/sourceRegistry.js";
-import sourcesService from "../services/sources.service.js";
+import sourcesService, {
+  DEFAULT_INGEST_ALL_PAGES_INPUT,
+} from "../services/sources.service.js";
 import responseEnhancer from "../utils/response-enhancer.js";
 import type { SourceKey } from "../lib/ingestion/core/sourceRegistry.js";
 
@@ -176,17 +178,18 @@ class SourcesController {
         parse.data.sources?.filter(
           (value): value is SourceKey =>
             sourceKeys.includes(value as SourceKey),
-        ) ?? undefined;
+        ) ?? DEFAULT_INGEST_ALL_PAGES_INPUT.sources;
 
       const result = await sourcesService.startIngestAllPages({
         sources: requestedSources,
-        fromPage: parse.data.fromPage,
+        fromPage: parse.data.fromPage ?? DEFAULT_INGEST_ALL_PAGES_INPUT.fromPage,
         toPage: parse.data.toPage,
         maxPages: parse.data.maxPages,
         limit: parse.data.limit,
         stopOnEmpty: parse.data.stopOnEmpty,
         enrichWithLlm: parse.data.enrichWithLlm,
-        concurrency: parse.data.concurrency,
+        concurrency:
+          parse.data.concurrency ?? DEFAULT_INGEST_ALL_PAGES_INPUT.concurrency,
       });
 
       const body = responseEnhancer.accepted(

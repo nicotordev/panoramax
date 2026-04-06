@@ -20,6 +20,14 @@ export type IngestAllPagesInput = {
   concurrency?: number;
 };
 
+export const DEFAULT_INGEST_ALL_PAGES_INPUT: Required<
+  Pick<IngestAllPagesInput, "sources" | "fromPage" | "concurrency">
+> = {
+  sources: sourceKeys,
+  fromPage: 1,
+  concurrency: 10,
+};
+
 export type IngestAllPagesSummary = {
   source: string;
   page: number;
@@ -74,7 +82,7 @@ class SourcesService {
       sources = sourceKeys,
       fromPage = 1,
       toPage,
-      maxPages = 500,
+      maxPages,
       limit,
       stopOnEmpty = true,
       enrichWithLlm,
