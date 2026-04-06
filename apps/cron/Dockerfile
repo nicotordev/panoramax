@@ -10,6 +10,7 @@ WORKDIR /app
 FROM base AS deps
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig.base.json tsconfig.base.json
 COPY tsconfig.node.json tsconfig.node.json
 COPY apps/cron/package.json apps/cron/package.json
 
@@ -18,6 +19,7 @@ RUN pnpm install --filter @panoramax/cron... --frozen-lockfile
 FROM base AS build
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig.base.json tsconfig.base.json
 COPY tsconfig.node.json tsconfig.node.json
 COPY apps/cron/package.json apps/cron/package.json
 COPY apps/cron/tsconfig.json apps/cron/tsconfig.json
