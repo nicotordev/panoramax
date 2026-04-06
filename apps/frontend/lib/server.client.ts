@@ -1,28 +1,29 @@
-import "server-only";
-import axios, { type AxiosInstance } from "axios";
-import type { Event } from "@/types/api";
+import type { Event, EventsListMeta } from "@/types/api"
+import axios, { type AxiosInstance } from "axios"
+import "server-only"
 
 type EventsListPayload = {
-  items: Event[];
-  total?: number;
-  page?: number;
-  limit?: number;
-};
-
-type EventsSuccessResponse = {
-  success: true;
-  message: string;
-  status: number;
-  data: Event[];
-  meta?: Omit<EventsListPayload, "items">;
-};
+  items: Event[]
+  total?: number
+  page?: number
+  limit?: number
+  stats?: {
+    communes?: number
+    free?: number
+  }
+}
 
 type ApiEnvelope<T> = {
-  success: boolean;
-  message: string;
-  status: number;
-  data: T;
-};
+  success: boolean
+  message: string
+  status: number
+  data: T
+}
+
+export type GetEventsResult = {
+  data: Event[]
+  meta: EventsListMeta
+}
 
 function isApiEnvelope(value: unknown): value is ApiEnvelope<unknown> {
   return (
@@ -32,7 +33,7 @@ function isApiEnvelope(value: unknown): value is ApiEnvelope<unknown> {
     "message" in value &&
     "status" in value &&
     "data" in value
-  );
+  )
 }
 
 function isEventsListPayload(value: unknown): value is EventsListPayload {
@@ -41,89 +42,133 @@ function isEventsListPayload(value: unknown): value is EventsListPayload {
     value !== null &&
     "items" in value &&
     Array.isArray((value as { items?: unknown }).items)
-  );
+  )
 }
 
-function normalizeEventsResponse(data: unknown): EventsSuccessResponse {
+function normalizeEventsResponse(data: unknown): GetEventsResult {
   if (Array.isArray(data)) {
+    const items = data as Event[]
     return {
-      success: true,
-      message: "Events fetched successfully",
-      status: 200,
-      data: data as Event[],
-    };
+      data: items,
+      meta: {
+        total: items.length,
+        page: 1,
+        limit: items.length,
+        stats: {
+          communes: new Set(
+            items.map((event) => (event.commune || event.city || "").trim())
+          ).size,
+          free: items.filter((event) => event.isFree).length,
+        },
+      },
+    }
   }
 
   if (isApiEnvelope(data)) {
     if (Array.isArray(data.data)) {
+      const items = data.data as Event[]
       return {
-        success: true,
-        message: data.message,
-        status: data.status,
-        data: data.data as Event[],
-      };
+        data: items,
+        meta: {
+          total: items.length,
+          page: 1,
+          limit: items.length,
+          stats: {
+            communes: new Set(
+              items.map((event) => (event.commune || event.city || "").trim())
+            ).size,
+            free: items.filter((event) => event.isFree).length,
+          },
+        },
+      }
     }
 
     if (isEventsListPayload(data.data)) {
-      const { items, ...meta } = data.data;
+      const { items, total, page, limit, stats } = data.data
       return {
-        success: true,
-        message: data.message,
-        status: data.status,
         data: items,
-        meta,
-      };
+        meta: {
+          total: total ?? items.length,
+          page: page ?? 1,
+          limit: limit ?? items.length,
+          stats: {
+            communes:
+              stats?.communes ??
+              new Set(
+                items.map((event) => (event.commune || event.city || "").trim())
+              ).size,
+            free:
+              stats?.free ?? items.filter((event) => event.isFree).length,
+          },
+        },
+      }
     }
   }
 
   console.error(
     "[ServerClient] getEvents: Unexpected response shape for events:",
     JSON.stringify(data)
-  );
+  )
 
   return {
-    success: true,
-    message: "Events fetched successfully",
-    status: 200,
     data: [],
-  };
+    meta: {
+      total: 0,
+      page: 1,
+      limit: 0,
+      stats: {
+        communes: 0,
+        free: 0,
+      },
+    },
+  }
 }
 
 const axiosInstance = axios.create({
   baseURL: process.env.API_BASE_URL,
-});
+})
 
 class ServerClient {
-  private axios: AxiosInstance;
+  private axios: AxiosInstance
 
   constructor() {
-    this.axios = axiosInstance;
+    this.axios = axiosInstance
   }
 
-  async getEvents(): Promise<EventsSuccessResponse> {
+  /**
+   * Lista eventos. Por defecto pide hasta 100 ítems para el hero (máx. API: 100).
+   */
+  async getEvents(params?: {
+    page?: number
+    limit?: number
+  }): Promise<GetEventsResult> {
     try {
-      const response = await this.axios.get<unknown>("/v1/events");
-      return normalizeEventsResponse(response.data);
+      const page = params?.page ?? 1
+      const limit = params?.limit ?? 100
+      const response = await this.axios.get<unknown>("/api/v1/events", {
+        params: { page, limit },
+      })
+      return normalizeEventsResponse(response.data)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error(
           "[ServerClient] Axios error when fetching events:",
           error.response?.status,
           error.response?.data || error.message
-        );
+        )
         throw new Error(
           `Failed to fetch events: ${error.response?.status ?? ""} ${
             typeof error.response?.data === "string" ? error.response.data : ""
           }`
-        );
+        )
       }
 
-      console.error("[ServerClient] Unknown error when fetching events:", error);
-      throw new Error("An unexpected error occurred while fetching events.");
+      console.error("[ServerClient] Unknown error when fetching events:", error)
+      throw new Error("An unexpected error occurred while fetching events.")
     }
   }
 }
 
-const serverClient = new ServerClient();
+const serverClient = new ServerClient()
 
-export default serverClient;
+export default serverClient

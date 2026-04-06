@@ -4,6 +4,7 @@ import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
   extractBodyText,
+  extractImageUrl,
   inferLocation,
   isPastEvent,
   mapCategory,
@@ -98,7 +99,7 @@ export const ingestGam = async ({
         description,
         imageUrl:
           $$('meta[property="og:image"]').attr("content") ??
-          $$("img").first().attr("src") ??
+          extractImageUrl($$("img").first()) ??
           null,
         dateText: dateMatch?.[0] ?? null,
         startAtIso: dateInfo.startAt.toISOString(),

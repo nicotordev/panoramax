@@ -173,6 +173,28 @@ const venueAliases = [
 export const normalizeText = (value: string | null | undefined) =>
   value?.replace(/\s+/g, " ").trim() || null;
 
+export const extractImageUrl = ($el: any) => {
+  if (!$el) return null;
+
+  const attributes = [
+    "data-src",
+    "data-lazy-src",
+    "data-original",
+    "data-img-url",
+    "data-src-retina",
+    "src",
+  ];
+
+  for (const attr of attributes) {
+    const val = typeof $el.attr === "function" ? $el.attr(attr) : null;
+    if (val && !val.startsWith("data:image/")) {
+      return val;
+    }
+  }
+
+  return (typeof $el.attr === "function" ? $el.attr("src") : null) || null;
+};
+
 export const extractBodyText = (html: string) => {
   const $ = load(html);
 

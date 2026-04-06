@@ -4,6 +4,7 @@ import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
   extractBodyText,
+  extractImageUrl,
   inferLocation,
   isPastEvent,
   mapCategory,
@@ -101,7 +102,7 @@ export const ingestAgendaMusical = async ({
       const location = inferLocation(`${venueName} ${text}`);
       const imageUrl =
         $$('meta[property="og:image"]').attr("content") ??
-        $$("img").first().attr("src") ??
+        extractImageUrl($$("img").first()) ??
         null;
       const categoryText = title;
 

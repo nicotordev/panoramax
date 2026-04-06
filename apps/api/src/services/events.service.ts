@@ -62,7 +62,7 @@ class EventsService {
       ...(categoryPrimary !== undefined ? { categoryPrimary } : {}),
     };
 
-    const [rows, total] = await Promise.all([
+    const [rows, total, freeTotal, distinctCommunes] = await Promise.all([
       prisma.event.findMany({
         where,
         orderBy: { startAt: "desc" },
@@ -71,6 +71,17 @@ class EventsService {
         include: { tiers: { orderBy: { sortOrder: "asc" } } },
       }),
       prisma.event.count({ where }),
+      prisma.event.count({
+        where: {
+          ...where,
+          isFree: true,
+        },
+      }),
+      prisma.event.findMany({
+        where,
+        select: { commune: true },
+        distinct: ["commune"],
+      }),
     ]);
 
     return {
@@ -78,6 +89,11 @@ class EventsService {
       total,
       page,
       limit,
+      stats: {
+        communes: distinctCommunes.filter((row) => row.commune.trim() !== "")
+          .length,
+        free: freeTotal,
+      },
     };
   }
 

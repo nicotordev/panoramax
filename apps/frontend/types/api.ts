@@ -87,3 +87,14 @@ export interface Event {
   createdAt: string
   updatedAt: string
 }
+
+/** Meta de `GET /api/v1/events` (`items` + `total` / `page` / `limit`). */
+export type EventsListMeta = {
+  total: number
+  page: number
+  limit: number
+  stats: {
+    communes: number
+    free: number
+  }
+}

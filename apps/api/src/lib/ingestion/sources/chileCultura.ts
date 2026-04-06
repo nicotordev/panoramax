@@ -10,7 +10,11 @@ import type {
   IngestionError,
   IngestionResult,
 } from "../core/shared.js";
-import { isPastEvent, upsertEvent } from "../core/shared.js";
+import {
+  extractImageUrl,
+  isPastEvent,
+  upsertEvent,
+} from "../core/shared.js";
 import { parseChileCulturaStartAt } from "../pipeline/chileDate.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
@@ -129,7 +133,7 @@ export class ChileCulturaIngestor {
             this.normalizeText($(item).find(".event-ticket").text()),
           ),
           imageUrl: this.normalizeText(
-            $(item).find("img.event-image").attr("src"),
+            extractImageUrl($(item).find("img.event-image")),
           ),
         } satisfies ChileCulturaListingItem;
       })

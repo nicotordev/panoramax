@@ -2,9 +2,17 @@ import type { MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 
+/** Browser origins allowed when `CORS_ORIGIN` is unset in production (`NODE_ENV=production`). */
+const DEFAULT_PRODUCTION_CORS_ORIGINS = [
+  "https://panoramax.cl",
+  "https://panoramax-api.nicotordev.com",
+  "https://panoramax.nicotordev.com",
+  "https://api.panoramax.cl",
+] as const;
+
 /**
  * Parses CORS_ORIGIN: comma-separated list, or "*" for any origin (avoid with credentials).
- * Production requires CORS_ORIGIN when browsers call the API from another origin.
+ * In production, if unset, defaults to Panoramax deploy origins; override with CORS_ORIGIN.
  */
 function resolveCorsOrigins(): string | string[] {
   const raw = process.env.CORS_ORIGIN?.trim();
@@ -20,7 +28,7 @@ function resolveCorsOrigins(): string | string[] {
   if (process.env.NODE_ENV !== "production") {
     return ["http://localhost:3000", "http://127.0.0.1:3000"];
   }
-  return [];
+  return [...DEFAULT_PRODUCTION_CORS_ORIGINS];
 }
 
 export const httpSecurity: MiddlewareHandler[] = [

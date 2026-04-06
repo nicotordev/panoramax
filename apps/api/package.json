@@ -15,6 +15,7 @@
     "ingest:all-pages": "tsx src/scripts/ingest-all-pages.ts",
     "inspect:ingest-task": "tsx src/scripts/inspect-ingest-task.ts",
     "smoke:ingest": "tsx src/scripts/smoke-ingest.ts",
+    "images:backfill": "tsx src/scripts/backfill-images.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "prisma:generate": "prisma generate",
     "prisma:db:pull": "prisma db pull",
@@ -22,11 +23,13 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1024.0",
     "@brightdata/sdk": "^1.0.0",
     "@hono/node-server": "^1.19.12",
     "@hono/zod-validator": "^0.7.6",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
+    "axios": "^1.14.0",
     "cheerio": "^1.2.0",
     "dotenv": "^16.6.1",
     "hono": "^4.12.10",

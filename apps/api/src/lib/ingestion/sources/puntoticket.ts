@@ -4,6 +4,7 @@ import { scrapeHtml } from "../../brightdata.js";
 import {
   absoluteUrl,
   extractBodyText,
+  extractImageUrl,
   inferLocation,
   isPastEvent,
   mapAudience,
@@ -112,7 +113,7 @@ export const ingestPuntoticket = async ({
         $$('meta[property="og:image"]').attr("content") ??
         $$("img")
           .toArray()
-          .map((node) => $$(node).attr("src"))
+          .map((node) => extractImageUrl($$(node)))
           .find((src) => Boolean(src && src.includes("eventos"))) ??
         null;
       const audience = mapAudience(text);
