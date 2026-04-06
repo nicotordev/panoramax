@@ -14,19 +14,16 @@ export default async function Page({ params }: HomePageProps) {
   const [weeklyEventsResponse, heroResponse] = await Promise.all([
     serverClient.getCurrentWeekEvents({
       limit: 4,
-      status: "scheduled",
     }),
     serverClient.getEvents({
       limit: 5,
-      status: "scheduled",
     }),
   ]);
-  const { data: heroEvents } = heroResponse
 
   return (
     <main>
-      <HeroSection events={weeklyEventsResponse.data} eventsMeta={weeklyEventsResponse.meta} />
-      <EventsBentoGrid events={heroEvents} />
+      <HeroSection events={heroResponse.data} eventsMeta={heroResponse.meta} />
+      <EventsBentoGrid events={weeklyEventsResponse.data} />
     </main>
   )
 }

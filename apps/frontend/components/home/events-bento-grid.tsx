@@ -11,7 +11,7 @@ import {
   HiMapPin,
   HiSparkles,
 } from "react-icons/hi2"
-import { getEventCardImageSrc } from "./event-card-utils"
+import { getEventCardImageSrc } from "@/lib/event-card.utils"
 
 interface EventsBentoGridProps {
   events: Event[]
@@ -115,7 +115,7 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
                   </span>
                 </div>
                 <Link
-                  href={`/events/${heroEvent.id}`}
+                  href={`/events/${heroEvent.slug || heroEvent.id}`}
                   className={cn(
                     buttonVariants({ size: "lg" }),
                     "mt-6 inline-flex rounded-full"
@@ -176,7 +176,7 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
                     </p>
                   </div>
                   <a
-                    href={`/events/${event.id}`}
+                    href={`/events/${event.slug || event.id}`}
                     className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/95"
                   >
                     Abrir evento

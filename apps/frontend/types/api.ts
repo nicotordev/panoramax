@@ -15,6 +15,7 @@ export interface EventTier {
 // Event model (as per schema.prisma)
 export interface Event {
   id: string
+  slug: string
   source: string
   sourceType: "editorial" | "venue" | "ticketing" | "organizer"
   sourceEventId?: string | null

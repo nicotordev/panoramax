@@ -16,6 +16,7 @@
     "inspect:ingest-task": "tsx src/scripts/inspect-ingest-task.ts",
     "smoke:ingest": "tsx src/scripts/smoke-ingest.ts",
     "images:backfill": "tsx src/scripts/backfill-images.ts",
+    "slugs:backfill": "tsx src/scripts/backfill-slugs.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "prisma:generate": "prisma generate",
     "prisma:db:pull": "prisma db pull",

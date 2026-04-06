@@ -1,0 +1,3 @@
+export const AUTOPLAY_INTERVAL_MS = 4000
+export const INTERACTION_COOLDOWN_MS = 12000
+

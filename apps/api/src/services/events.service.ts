@@ -1,6 +1,7 @@
 import { Prisma } from "../generated/prisma/client.js";
 import type { EventModel } from "../generated/prisma/models/Event.js";
 import { serializeEvent } from "../lib/events/serialize-event.js";
+import { buildEventSlug } from "../lib/ingestion/core/shared.js";
 import { toPrismaJsonInput } from "../lib/prisma-json.js";
 import { prisma } from "../lib/prisma.js";
 import type {
@@ -16,9 +17,18 @@ function toCreateData(
   data: EventCreateInputWithoutTiers,
 ): Prisma.EventUncheckedCreateInput {
   const { categoriesSource, tags, editorialLabels, rawPayload, ...rest } = data;
+  const slug =
+    data.slug ??
+    buildEventSlug({
+      title: data.title,
+      source: data.source,
+      sourceEventId: data.sourceEventId,
+      sourceUrl: data.sourceUrl,
+    });
 
   return {
     ...rest,
+    slug,
     rawPayload: toPrismaJsonInput(rawPayload),
     categoriesSource: categoriesSource ?? [],
     tags: tags ?? [],
@@ -111,17 +121,27 @@ class EventsService {
     const categoryPrimary = query?.categoryPrimary;
     const skip = (page - 1) * limit;
 
-    // Upcoming events only: from now until the end of next week.
-    // This includes the remainder of current week + full following week.
-    const startOfWindow = new Date();
-    const startOfCurrentWeek = new Date(startOfWindow);
-    const day = startOfCurrentWeek.getDay();
-    const diffToMonday = (day + 6) % 7;
-    startOfCurrentWeek.setDate(startOfCurrentWeek.getDate() - diffToMonday);
-    startOfCurrentWeek.setHours(0, 0, 0, 0);
+    // Upcoming events only: from today (now) until the end of NEXT WEEK (Sunday 23:59:59).
+    // This covers the rest of current week plus the full next week.
+    const now = new Date();
 
-    const endOfWindow = new Date(startOfCurrentWeek);
-    endOfWindow.setDate(endOfWindow.getDate() + 14);
+    // Get Monday of current week
+    const startOfCurrentWeek = new Date(now);
+    const day = startOfCurrentWeek.getDay(); // 0 (Sun) ... 6 (Sat)
+    // Calculate how many days since last Monday (Monday = 1)
+    const diffToMonday = (day + 6) % 7;
+
+    // For the start boundary: use NOW (not start of week) to not show past events of current week
+    const startOfWindow = new Date(now);
+
+    // For end: get to next week's Sunday 23:59:59.999
+    const endOfCurrentWeek = new Date(startOfCurrentWeek);
+    endOfCurrentWeek.setDate(endOfCurrentWeek.getDate() - diffToMonday + 6); // this week's Sunday
+    endOfCurrentWeek.setHours(23, 59, 59, 999);
+
+    const endOfWindow = new Date(endOfCurrentWeek);
+    endOfWindow.setDate(endOfWindow.getDate() + 7); // Next week's Sunday
+    endOfWindow.setHours(23, 59, 59, 999);
 
     const where: Prisma.EventWhereInput = {
       ...(city !== undefined && city !== "" ? { city } : {}),
@@ -205,8 +225,19 @@ class EventsService {
 
   public async update(id: string, data: EventUpdateInput) {
     const { rawPayload, tiers, ...rest } = data;
+    const slug =
+      data.slug ??
+      (data.title && data.source && data.sourceUrl
+        ? buildEventSlug({
+            title: data.title,
+            source: data.source,
+            sourceEventId: data.sourceEventId,
+            sourceUrl: data.sourceUrl,
+          })
+        : undefined);
     const patch: Prisma.EventUncheckedUpdateInput = {
       ...rest,
+      ...(slug !== undefined ? { slug } : {}),
       ...(rawPayload !== undefined
         ? { rawPayload: toPrismaJsonInput(rawPayload) }
         : {}),

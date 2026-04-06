@@ -5,7 +5,7 @@ import type { Event } from "@/types/api"
 import { useTranslations } from "next-intl"
 import { Badge } from "../ui/badge"
 import { Card } from "../ui/card"
-import { getEventCardImageSrc } from "./event-card-utils"
+import { getEventCardImageSrc } from "@/lib/event-card.utils"
 
 interface EventGalleryCardProps {
   event: Event

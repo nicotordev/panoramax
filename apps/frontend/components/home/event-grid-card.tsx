@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card"
-import { getEventCardImageSrc } from "./event-card-utils"
+import { getEventCardImageSrc } from "@/lib/event-card.utils"
 
 interface EventGridCardProps {
   event: Event

@@ -693,15 +693,25 @@ function toEventUncheckedCreateInput(
   event: Omit<EventCreateInput, "tiers">,
 ): Prisma.EventUncheckedCreateInput {
   const {
+    slug,
     categoriesSource,
     tags,
     editorialLabels,
     rawPayload,
     ...rest
   } = event;
+  const resolvedSlug =
+    slug ??
+    buildEventSlug({
+      title: event.title,
+      source: event.source,
+      sourceEventId: event.sourceEventId,
+      sourceUrl: event.sourceUrl,
+    });
 
   return {
     ...rest,
+    slug: resolvedSlug,
     rawPayload: toPrismaJsonInput(rawPayload),
     categoriesSource: categoriesSource ?? [],
     tags: tags ?? [],
@@ -713,6 +723,7 @@ function toEventUncheckedUpdateInput(
   event: Omit<EventCreateInput, "tiers">,
 ): Prisma.EventUncheckedUpdateInput {
   const {
+    slug,
     categoriesSource,
     tags,
     editorialLabels,
@@ -722,6 +733,7 @@ function toEventUncheckedUpdateInput(
 
   return {
     ...rest,
+    ...(slug ? { slug } : {}),
     rawPayload: toPrismaJsonInput(rawPayload),
     categoriesSource: categoriesSource ?? [],
     tags: tags ?? [],
