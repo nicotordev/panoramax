@@ -3,5 +3,6 @@ packages:
 
 onlyBuiltDependencies:
   - '@prisma/engines'
+  - '@swc/core'
   - msw
   - prisma
