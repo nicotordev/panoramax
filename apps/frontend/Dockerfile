@@ -30,7 +30,6 @@ COPY apps/frontend/hooks apps/frontend/hooks
 COPY apps/frontend/lib apps/frontend/lib
 COPY apps/frontend/public apps/frontend/public
 COPY apps/frontend/types apps/frontend/types
-COPY apps/frontend/next-env.d.ts apps/frontend/next-env.d.ts
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
