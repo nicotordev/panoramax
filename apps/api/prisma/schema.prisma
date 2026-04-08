@@ -50,13 +50,18 @@ enum CategoryPrimary {
 }
 
 enum TranslationLocale {
-  de    // de.json
-  en    // en.json
-  es    // es.json
+  de // de.json
+  en // en.json
+  es // es.json
   es419 // es-419.json
-  fr    // fr.json
-  it    // it.json
-  zh    // zh-CN.json
+  fr // fr.json
+  it // it.json
+  zh // zh-CN.json
+}
+
+enum BlogPostStatus {
+  draft
+  published
 }
 
 model Event {
@@ -99,12 +104,12 @@ model Event {
   isOnline      Boolean  @default(false) @map("is_online")
   locationNotes String?  @map("location_notes")
 
-  isFree           Boolean     @default(false) @map("is_free")
-  priceMin         Decimal?    @map("price_min") @db.Decimal(12, 2)
-  priceMax         Decimal?    @map("price_max") @db.Decimal(12, 2)
-  currency         String      @default("CLP")
-  priceText        String?     @map("price_text")
-  availabilityText String?     @map("availability_text")
+  isFree           Boolean            @default(false) @map("is_free")
+  priceMin         Decimal?           @map("price_min") @db.Decimal(12, 2)
+  priceMax         Decimal?           @map("price_max") @db.Decimal(12, 2)
+  currency         String             @default("CLP")
+  priceText        String?            @map("price_text")
+  availabilityText String?            @map("availability_text")
   tiers            EventTier[]
   translations     EventTranslation[]
 
@@ -183,7 +188,7 @@ model EventTier {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  event        Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event        Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
   translations EventTierTranslation[]
 
   @@index([eventId], map: "event_tiers_event_id_idx")
@@ -241,4 +246,52 @@ model User {
 
   @@index([clerkId], map: "users_clerk_id_idx")
   @@map("users")
+}
+
+model BlogPost {
+  id                    String         @id @default(uuid()) @db.Uuid
+  slug                  String         @unique
+  status                BlogPostStatus @default(draft)
+  publishedAt           DateTime?      @map("published_at") @db.Timestamptz(6)
+  coverImageUrl         String?        @map("cover_image_url")
+  coverImageAttribution String?        @map("cover_image_attribution")
+  authorName            String?        @map("author_name")
+
+  title   String
+  excerpt String?
+  body    String? @db.Text
+
+  translations BlogPostTranslation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, publishedAt], map: "blog_posts_status_published_at_idx")
+  @@map("blog_posts")
+}
+
+model BlogPostTranslation {
+  id String @id @default(uuid()) @db.Uuid
+
+  blogPostId String   @map("blog_post_id") @db.Uuid
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  locale TranslationLocale
+
+  title   String?
+  excerpt String?
+  body    String? @db.Text
+
+  autoTranslated Boolean @default(false) @map("auto_translated")
+  sourceLocale   String? @map("source_locale")
+  provider       String?
+  version        Int     @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([blogPostId, locale], map: "blog_post_translations_blog_post_id_locale_key")
+  @@index([locale], map: "blog_post_translations_locale_idx")
+  @@index([blogPostId], map: "blog_post_translations_blog_post_id_idx")
+  @@map("blog_post_translations")
 }

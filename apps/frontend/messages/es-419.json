@@ -18,6 +18,36 @@
     "viewDetails": "Ver detalles",
     "viewEvents": "Ver eventos",
     "exploreCategories": "Explorar categorías",
+    "categoriesHeading": "Explora por categoría",
+    "categoriesIntro": "Todas las categorías a un toque: el número indica cuántos eventos hay en este listado.",
+    "previewPicksTitle": "Algunos destacados",
+    "features": {
+      "badge": "¿Por qué Panoramax?",
+      "title": "Tu guía para elegir mejores panoramas",
+      "description": "Combinamos una experiencia visual clara con contexto útil para que encuentres eventos más rápido.",
+      "curatedAgendaTitle": "Agenda curada",
+      "curatedAgendaDescription": "Descubre eventos seleccionados para esta semana, con foco en calidad y variedad.",
+      "quickSearchTitle": "Búsqueda rápida",
+      "quickSearchDescription": "Encuentra eventos por categoría, ciudad y texto en segundos desde un solo lugar.",
+      "localContextTitle": "Contexto local",
+      "localContextDescription": "Cada ficha incluye lugar, fecha y detalles clave para decidir rápido."
+    },
+    "blog": {
+      "badge": "Notas Panoramax",
+      "title": "Ideas para descubrir más en la ciudad",
+      "description": "Lecturas rápidas sobre planes, barrios y tips prácticos para disfrutar mejor tu semana.",
+      "viewAll": "Ver todas las notas",
+      "readArticle": "Leer nota",
+      "emptyTitle": "Todavía no hay notas publicadas",
+      "emptyDescription": "Estamos preparando guías y tips editoriales. Mientras tanto, explorá los eventos en vivo en la guía.",
+      "browseEvents": "Ver eventos"
+    },
+    "cta": {
+      "title": "Potenciá tu semana. Empezá a explorar con la app hoy.",
+      "description": "Descubrí cultura curada en un solo lugar, de salas íntimas a grandes festivales, y pasá de la idea al plan más rápido.",
+      "primaryCta": "Empezar",
+      "secondaryCta": "Saber más"
+    },
     "stats": {
       "events": "Eventos en la guía",
       "communes": "Comunas en la guía",
@@ -38,6 +68,18 @@
     "viewCompleteAgenda": "Ver agenda completa",
     "event": "Evento",
     "free": "Gratis"
+  },
+  "BlogPage": {
+    "title": "Notas Panoramax",
+    "description": "Guías, barrios y tips prácticos para sacarle más provecho a la ciudad.",
+    "emptyTitle": "Todavía no hay notas",
+    "emptyDescription": "Volvé pronto para leer nuevos artículos.",
+    "backHome": "Volver al inicio",
+    "articleNotFoundTitle": "Nota no encontrada",
+    "articleNotFoundDescription": "Es posible que se haya eliminado o el enlace no sea correcto.",
+    "backToBlog": "Todas las notas",
+    "coverCredit": "Imagen",
+    "openNote": "Leer nota"
   },
   "Common": {
     "free": "Gratis",

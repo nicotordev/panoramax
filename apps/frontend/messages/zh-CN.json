@@ -18,6 +18,36 @@
     "viewDetails": "查看详情",
     "viewEvents": "查看活动",
     "exploreCategories": "浏览分类",
+    "categoriesHeading": "按分类浏览",
+    "categoriesIntro": "轻点即可浏览全部分类；数字表示当前列表中该分类下的活动数量。",
+    "previewPicksTitle": "精选推荐",
+    "features": {
+      "badge": "为什么选择 Panoramax？",
+      "title": "帮你更快挑选好活动的指南",
+      "description": "我们结合清晰的视觉体验与实用信息，让你更快找到想去的活动。",
+      "curatedAgendaTitle": "精选活动清单",
+      "curatedAgendaDescription": "发现本周精心挑选的活动，兼顾质量与多样性。",
+      "quickSearchTitle": "快速搜索",
+      "quickSearchDescription": "在一个入口中按分类、城市和关键词快速查找活动。",
+      "localContextTitle": "本地信息更完整",
+      "localContextDescription": "每张活动卡片都包含地点、时间和关键细节，方便快速决策。"
+    },
+    "blog": {
+      "badge": "Panoramax 笔记",
+      "title": "探索城市的更多灵感",
+      "description": "关于活动、街区与实用建议的短文，帮助你更好安排这一周。",
+      "viewAll": "查看全部笔记",
+      "readArticle": "阅读文章",
+      "emptyTitle": "还没有发布笔记",
+      "emptyDescription": "我们正在准备编辑指南与实用建议。欢迎先浏览活动指南中的现场活动。",
+      "browseEvents": "浏览活动"
+    },
+    "cta": {
+      "title": "让每一周更高效。今天就打开应用开始探索。",
+      "description": "在一个地方发现精选文化内容——从小型场地到大型节庆——更快把想法变成出行计划。",
+      "primaryCta": "开始使用",
+      "secondaryCta": "了解更多"
+    },
     "stats": {
       "events": "指南中的活动",
       "communes": "指南中的区县",
@@ -38,6 +68,18 @@
     "viewCompleteAgenda": "查看完整日程",
     "event": "活动",
     "free": "免费"
+  },
+  "BlogPage": {
+    "title": "Panoramax 笔记",
+    "description": "指南、街区与实用建议，帮助你更懂这座城市。",
+    "emptyTitle": "暂无笔记",
+    "emptyDescription": "请稍后再来查看新文章。",
+    "backHome": "返回首页",
+    "articleNotFoundTitle": "未找到该笔记",
+    "articleNotFoundDescription": "内容可能已删除，或链接不正确。",
+    "backToBlog": "全部笔记",
+    "coverCredit": "图片",
+    "openNote": "阅读全文"
   },
   "Common": {
     "free": "免费",

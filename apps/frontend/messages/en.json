@@ -18,6 +18,36 @@
     "viewDetails": "View details",
     "viewEvents": "View events",
     "exploreCategories": "Explore categories",
+    "categoriesHeading": "Browse by category",
+    "categoriesIntro": "Every category is one tap away—the badge shows how many events match the current listing.",
+    "previewPicksTitle": "A few highlights",
+    "features": {
+      "badge": "Why Panoramax?",
+      "title": "Your guide to choosing better plans",
+      "description": "We combine a clear visual experience with useful context so you can find events faster.",
+      "curatedAgendaTitle": "Curated agenda",
+      "curatedAgendaDescription": "Discover selected events for this week with a focus on quality and variety.",
+      "quickSearchTitle": "Fast search",
+      "quickSearchDescription": "Find events by category, city, and text in seconds from one place.",
+      "localContextTitle": "Local context",
+      "localContextDescription": "Every event card includes venue, date, and key details to help you decide quickly."
+    },
+    "blog": {
+      "badge": "Panoramax Notes",
+      "title": "Ideas to discover more in the city",
+      "description": "Quick reads about plans, neighborhoods, and practical tips to enjoy your week better.",
+      "viewAll": "View all notes",
+      "readArticle": "Read note",
+      "emptyTitle": "No notes published yet",
+      "emptyDescription": "We are preparing editorial guides and tips. Meanwhile, explore live events in the guide.",
+      "browseEvents": "Browse events"
+    },
+    "cta": {
+      "title": "Boost your productivity. Start using our app today.",
+      "description": "Discover curated culture in one place—from intimate venues to major festivals—and turn ideas into plans faster.",
+      "primaryCta": "Get started",
+      "secondaryCta": "Learn more"
+    },
     "stats": {
       "events": "Events in the guide",
       "communes": "Communes in the guide",
@@ -38,6 +68,18 @@
     "viewCompleteAgenda": "View complete agenda",
     "event": "Event",
     "free": "Free"
+  },
+  "BlogPage": {
+    "title": "Panoramax Notes",
+    "description": "Guides, neighborhoods, and practical tips to get more from the city.",
+    "emptyTitle": "No notes yet",
+    "emptyDescription": "Check back soon for new articles.",
+    "backHome": "Back to home",
+    "articleNotFoundTitle": "Note not found",
+    "articleNotFoundDescription": "This note may have been removed or the link is incorrect.",
+    "backToBlog": "All notes",
+    "coverCredit": "Image",
+    "openNote": "Read note"
   },
   "Common": {
     "free": "Free",

@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
-import { useTranslations } from "next-intl";
+import { useTranslations } from "next-intl"
 import Image from "next/image"
 import {
   HiArrowUpRight,
@@ -66,14 +66,14 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
     event.translation?.priceText || event.priceText
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
+    <section className="mx-auto w-full max-w-7xl border-t border-border/40 px-6 py-16 lg:px-8 lg:py-20">
       <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <HiSparkles className="size-4" />
             {t("selectedForTheWeek")}
           </div>
-          <h2 className="font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          <h2 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t("quickMapOfWhatToSeeThisWeek")}
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">

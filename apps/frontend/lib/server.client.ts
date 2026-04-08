@@ -1,4 +1,11 @@
-import type { Event, EventsListMeta } from "@/types/api"
+import type { ApiTranslationLocale } from "@/lib/api-locale"
+import type {
+  BlogPostDetail,
+  BlogPostListItem,
+  BlogPostsListMeta,
+  Event,
+  EventsListMeta,
+} from "@/types/api"
 import axios, { type AxiosInstance } from "axios"
 import "server-only"
 
@@ -13,6 +20,13 @@ type EventsListPayload = {
   }
 }
 
+type BlogPostsListPayload = {
+  items: BlogPostListItem[]
+  total?: number
+  page?: number
+  limit?: number
+}
+
 type ApiEnvelope<T> = {
   success: boolean
   message: string
@@ -23,6 +37,11 @@ type ApiEnvelope<T> = {
 export type GetEventsResult = {
   data: Event[]
   meta: EventsListMeta
+}
+
+export type GetBlogPostsResult = {
+  data: BlogPostListItem[]
+  meta: BlogPostsListMeta
 }
 
 function isApiEnvelope(value: unknown): value is ApiEnvelope<unknown> {
@@ -43,6 +62,39 @@ function isEventsListPayload(value: unknown): value is EventsListPayload {
     "items" in value &&
     Array.isArray((value as { items?: unknown }).items)
   )
+}
+
+function isBlogPostsListPayload(value: unknown): value is BlogPostsListPayload {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "items" in value &&
+    Array.isArray((value as { items?: unknown }).items)
+  )
+}
+
+function normalizeBlogPostsResponse(data: unknown): GetBlogPostsResult {
+  if (isApiEnvelope(data) && isBlogPostsListPayload(data.data)) {
+    const { items, total, page, limit } = data.data
+    return {
+      data: items,
+      meta: {
+        total: total ?? items.length,
+        page: page ?? 1,
+        limit: limit ?? items.length,
+      },
+    }
+  }
+
+  console.error(
+    "[ServerClient] getBlogPosts: Unexpected response shape:",
+    JSON.stringify(data)
+  )
+
+  return {
+    data: [],
+    meta: { total: 0, page: 1, limit: 0 },
+  }
 }
 
 function normalizeEventsResponse(data: unknown): GetEventsResult {
@@ -206,6 +258,82 @@ class ServerClient {
       throw new Error(
         "An unexpected error occurred while fetching current week events."
       )
+    }
+  }
+
+  async getBlogPosts(params?: {
+    page?: number
+    limit?: number
+    locale?: ApiTranslationLocale
+  }): Promise<GetBlogPostsResult> {
+    try {
+      const page = params?.page ?? 1
+      const limit = params?.limit ?? 12
+      const locale = params?.locale
+      const response = await this.axios.get<unknown>("/api/v1/blog/posts", {
+        params: { page, limit, locale },
+      })
+      return normalizeBlogPostsResponse(response.data)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "[ServerClient] Axios error when fetching blog posts:",
+          error.response?.status,
+          error.response?.data || error.message
+        )
+      } else {
+        console.error(
+          "[ServerClient] Unknown error when fetching blog posts:",
+          error
+        )
+      }
+      return {
+        data: [],
+        meta: { total: 0, page: 1, limit: params?.limit ?? 12 },
+      }
+    }
+  }
+
+  async getBlogPostBySlug(
+    slug: string,
+    params?: { locale?: ApiTranslationLocale }
+  ): Promise<BlogPostDetail | null> {
+    try {
+      const locale = params?.locale
+      const response = await this.axios.get<unknown>(
+        `/api/v1/blog/posts/${encodeURIComponent(slug)}`,
+        { params: { locale } }
+      )
+      if (!isApiEnvelope(response.data) || !response.data.success) {
+        return null
+      }
+      const payload = response.data.data
+      if (
+        typeof payload !== "object" ||
+        payload === null ||
+        !("slug" in payload) ||
+        typeof (payload as { slug?: unknown }).slug !== "string"
+      ) {
+        return null
+      }
+      return payload as BlogPostDetail
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return null
+      }
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "[ServerClient] Axios error when fetching blog post:",
+          error.response?.status,
+          error.response?.data || error.message
+        )
+      } else {
+        console.error(
+          "[ServerClient] Unknown error when fetching blog post:",
+          error
+        )
+      }
+      return null
     }
   }
 }

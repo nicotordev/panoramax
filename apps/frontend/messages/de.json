@@ -18,6 +18,36 @@
     "viewDetails": "Details ansehen",
     "viewEvents": "Events ansehen",
     "exploreCategories": "Kategorien entdecken",
+    "categoriesHeading": "Nach Kategorie stöbern",
+    "categoriesIntro": "Alle Kategorien mit einem Tap — die Zahl zeigt, wie viele Events in dieser Liste sind.",
+    "previewPicksTitle": "Ein paar Highlights",
+    "features": {
+      "badge": "Warum Panoramax?",
+      "title": "Dein Guide für bessere Event-Auswahl",
+      "description": "Wir kombinieren ein klares visuelles Erlebnis mit nützlichem Kontext, damit du schneller Events findest.",
+      "curatedAgendaTitle": "Kuratiertes Programm",
+      "curatedAgendaDescription": "Entdecke ausgewählte Events dieser Woche mit Fokus auf Qualität und Vielfalt.",
+      "quickSearchTitle": "Schnelle Suche",
+      "quickSearchDescription": "Finde Events nach Kategorie, Stadt und Text in Sekunden an einem Ort.",
+      "localContextTitle": "Lokaler Kontext",
+      "localContextDescription": "Jede Eventkarte enthält Ort, Datum und wichtige Details für schnelle Entscheidungen."
+    },
+    "blog": {
+      "badge": "Panoramax Notizen",
+      "title": "Ideen, um die Stadt besser zu entdecken",
+      "description": "Kurze Beiträge zu Events, Vierteln und praktischen Tipps für eine bessere Woche.",
+      "viewAll": "Alle Notizen ansehen",
+      "readArticle": "Beitrag lesen",
+      "emptyTitle": "Noch keine Notizen veröffentlicht",
+      "emptyDescription": "Wir bereiten redaktionelle Guides und Tipps vor. Entdecke in der Zwischenzeit Live-Events in der Übersicht.",
+      "browseEvents": "Events durchstöbern"
+    },
+    "cta": {
+      "title": "Hol mehr aus deiner Woche. Leg heute mit der App los.",
+      "description": "Entdecke kuratierte Kultur an einem Ort—von kleinen Venues bis zu großen Festivals—und verwandle Ideen schneller in Pläne.",
+      "primaryCta": "Loslegen",
+      "secondaryCta": "Mehr erfahren"
+    },
     "stats": {
       "events": "Events im Guide",
       "communes": "Kommunen im Guide",
@@ -38,6 +68,18 @@
     "viewCompleteAgenda": "Vollständige Agenda ansehen",
     "event": "Event",
     "free": "Kostenlos"
+  },
+  "BlogPage": {
+    "title": "Panoramax Notizen",
+    "description": "Guides, Viertel und praktische Tipps, um mehr aus der Stadt zu holen.",
+    "emptyTitle": "Noch keine Notizen",
+    "emptyDescription": "Schau bald wieder vorbei für neue Artikel.",
+    "backHome": "Zur Startseite",
+    "articleNotFoundTitle": "Notiz nicht gefunden",
+    "articleNotFoundDescription": "Diese Notiz wurde möglicherweise entfernt oder der Link ist falsch.",
+    "backToBlog": "Alle Notizen",
+    "coverCredit": "Bild",
+    "openNote": "Beitrag lesen"
   },
   "Common": {
     "free": "Kostenlos",

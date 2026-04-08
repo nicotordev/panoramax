@@ -134,3 +134,43 @@ export type EventsListMeta = {
     free: number
   }
 }
+
+/** Public list item from `GET /api/v1/blog/posts` (body and translations omitted). */
+export interface BlogPostListItem {
+  id: string
+  slug: string
+  publishedAt: string | null
+  coverImageUrl?: string | null
+  coverImageAttribution?: string | null
+  authorName?: string | null
+  title: string
+  excerpt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Single post from `GET /api/v1/blog/posts/:slug`. */
+export interface BlogPostDetail extends BlogPostListItem {
+  body?: string | null
+}
+
+export type BlogPostsListMeta = {
+  total: number
+  page: number
+  limit: number
+}
+
+export enum CategoryPrimaryEnum {
+  music = "music",
+  theatre = "theatre",
+  standup = "standup",
+  dance = "dance",
+  festival = "festival",
+  fair = "fair",
+  exhibition = "exhibition",
+  food_drink = "food_drink",
+  family = "family",
+  sports = "sports",
+  workshop = "workshop",
+  special_experience = "special_experience",
+}
