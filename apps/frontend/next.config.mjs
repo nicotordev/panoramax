@@ -1,8 +1,9 @@
+import createNextIntlPlugin from "next-intl/plugin"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import createNextIntlPlugin from "next-intl/plugin"
 
-const withNextIntl = createNextIntlPlugin()
+/** Relative to this package root (required for next-intl + Turbopack; no absolute paths). */
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts")
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
