@@ -120,6 +120,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      instantsearch.js:
+        specifier: ^4.93.0
+        version: 4.93.0(algoliasearch@5.50.1)
       lucide-react:
         specifier: ^1.7.0
         version: 1.7.0(react@19.2.4)
