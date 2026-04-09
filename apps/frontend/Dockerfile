@@ -18,21 +18,8 @@ FROM base AS build
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY tsconfig.base.json tsconfig.base.json
-COPY apps/frontend/package.json apps/frontend/package.json
-COPY apps/frontend/tsconfig.json apps/frontend/tsconfig.json
-COPY apps/frontend/next.config.mjs apps/frontend/next.config.mjs
-COPY apps/frontend/postcss.config.mjs apps/frontend/postcss.config.mjs
-COPY apps/frontend/components.json apps/frontend/components.json
-COPY apps/frontend/app apps/frontend/app
-COPY apps/frontend/components apps/frontend/components
-COPY apps/frontend/data apps/frontend/data
-COPY apps/frontend/hooks apps/frontend/hooks
-COPY apps/frontend/lib apps/frontend/lib
-COPY apps/frontend/public apps/frontend/public
-COPY apps/frontend/types apps/frontend/types
-COPY apps/frontend/i18n apps/frontend/i18n
-COPY apps/frontend/messages apps/frontend/messages
-COPY apps/frontend/proxy.ts apps/frontend/proxy.ts
+# Whole app tree; .dockerignore omits apps/*/node_modules, apps/*/.next, etc.
+COPY apps/frontend ./apps/frontend
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 

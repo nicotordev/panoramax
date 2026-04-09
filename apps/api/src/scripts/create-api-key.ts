@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { apiKeyScopes } from "../constants/api-access.js";
-import apiKeysService from "../services/api-keys.service.js";
 import { prisma } from "../lib/prisma.js";
+import apiKeysService from "../services/api-keys.service.js";
 
 type ParsedArgs = {
   name: string;
@@ -21,9 +21,15 @@ function parseArgs(argv: string[]): ParsedArgs {
   let name: string | undefined;
   const scopes: string[] = [];
   let expiresAt: Date | undefined;
+  let allScopes = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+
+    if (arg === "--all-scopes") {
+      allScopes = true;
+      continue;
+    }
 
     if (arg === "--scope") {
       scopes.push(readFlagValue(argv, index, "--scope"));
@@ -71,36 +77,42 @@ function parseArgs(argv: string[]): ParsedArgs {
 
   if (name === undefined || name.trim() === "") {
     throw new Error(
-      "Usage: pnpm --dir apps/api api-key:create <name> [--scope events:write] [--scope sources:ingest] [--expires-in-days 30]",
+      "Usage: pnpm --dir apps/api api-key:create <name> [--all-scopes] [--scope events:write] ... [--expires-in-days 30]",
     );
   }
 
+  if (allScopes && scopes.length > 0) {
+    throw new Error(
+      "Use either --all-scopes or one/more --scope flags, not both.",
+    );
+  }
+
+  const resolvedScopes = allScopes ? [...apiKeyScopes] : scopes;
+
   return {
     name,
-    scopes,
+    scopes: resolvedScopes,
     expiresAt,
   };
 }
 
 async function main() {
-  const parsed = parseArgs(process.argv.slice(2));
-  const created = await apiKeysService.create(parsed);
+  const { name, scopes, expiresAt } = parseArgs(process.argv.slice(2));
+  const created = await apiKeysService.create({ name, scopes, expiresAt });
 
   console.log("API key created.");
   console.log(`Name: ${created.name}`);
   console.log(`ID: ${created.id}`);
   console.log(`Prefix: ${created.keyPrefix}`);
-  console.log(`Scopes: ${created.scopes.length > 0 ? created.scopes.join(", ") : "(none)"}`);
   console.log(
-    `Expires at: ${created.expiresAt?.toISOString() ?? "never"}`,
+    `Scopes: ${created.scopes.length > 0 ? created.scopes.join(", ") : "(none)"}`,
   );
+  console.log(`Expires at: ${created.expiresAt?.toISOString() ?? "never"}`);
   console.log("");
   console.log("Store this key now. It will not be shown again.");
   console.log(created.rawKey);
   console.log("");
-  console.log(
-    `Allowed scopes: ${apiKeyScopes.join(", ")}`,
-  );
+  console.log(`Allowed scopes: ${apiKeyScopes.join(", ")}`);
 }
 
 main()
