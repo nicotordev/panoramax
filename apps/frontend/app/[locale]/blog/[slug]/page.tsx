@@ -1,6 +1,7 @@
 import { buttonVariants } from "@/data/variants.data"
 import { Link } from "@/i18n/navigation"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
+import { createDateFormatter } from "@/lib/date-format"
 import serverClient from "@/lib/server.client"
 import { cn } from "@/lib/utils"
 import { getTranslations, setRequestLocale } from "next-intl/server"
@@ -42,9 +43,7 @@ export default async function BlogArticlePage({
     notFound()
   }
 
-  const dateLocale =
-    locale === "es-419" ? "es-419" : locale === "zh-CN" ? "zh-CN" : locale
-  const dateFormatter = new Intl.DateTimeFormat(dateLocale, {
+  const dateFormatter = createDateFormatter(locale, {
     dateStyle: "long",
   })
 

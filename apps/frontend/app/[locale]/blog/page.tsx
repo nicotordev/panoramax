@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card"
 import { buttonVariants } from "@/data/variants.data"
 import { Link } from "@/i18n/navigation"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
+import { createDateFormatter } from "@/lib/date-format"
 import serverClient from "@/lib/server.client"
 import { cn } from "@/lib/utils"
 import { getTranslations, setRequestLocale } from "next-intl/server"
@@ -17,9 +18,7 @@ export default async function BlogIndexPage({ params }: BlogIndexPageProps) {
   setRequestLocale(locale)
   const t = await getTranslations("BlogPage")
 
-  const dateLocale =
-    locale === "es-419" ? "es-419" : locale === "zh-CN" ? "zh-CN" : locale
-  const dateFormatter = new Intl.DateTimeFormat(dateLocale, {
+  const dateFormatter = createDateFormatter(locale, {
     dateStyle: "medium",
   })
 

@@ -5,6 +5,7 @@ import HeroSection from "@/components/home/hero-section"
 import HomeCtaSection from "@/components/home/home-cta-section"
 import PanoramaxFeatures from "@/components/home/panoramax-features"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
+import { createDateFormatter } from "@/lib/date-format"
 import serverClient from "@/lib/server.client"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 
@@ -20,9 +21,7 @@ export default async function Page({ params }: HomePageProps) {
   const blogT = await getTranslations("HomePage.blog")
   const ctaT = await getTranslations("HomePage.cta")
 
-  const dateLocale =
-    locale === "es-419" ? "es-419" : locale === "zh-CN" ? "zh-CN" : locale
-  const dateFormatter = new Intl.DateTimeFormat(dateLocale, {
+  const dateFormatter = createDateFormatter(locale, {
     dateStyle: "medium",
   })
 
