@@ -19,6 +19,7 @@ import {
   type IngestionResult,
 } from "../core/shared.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import { scrapeDetailHtmlAndOptionalMarkdown } from "../pipeline/scrapeDetailForIngest.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
 export const ingestPuntoticket = async ({
@@ -48,7 +49,8 @@ export const ingestPuntoticket = async ({
 
   for (const sourceUrl of candidateLinks) {
     try {
-      const detailHtml = await scrapeHtml(sourceUrl);
+      const { html: detailHtml, markdown: pageMarkdown } =
+        await scrapeDetailHtmlAndOptionalMarkdown(sourceUrl, enrichWithLlm);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
 
@@ -173,6 +175,7 @@ export const ingestPuntoticket = async ({
           .filter(Boolean)
           .join("\n\n"),
         pricing: priceText ?? undefined,
+        ...(pageMarkdown ? { markdown: pageMarkdown } : {}),
       };
 
       const { event, enrichFailed, enrichError } = await finalizeIngestedEvent(

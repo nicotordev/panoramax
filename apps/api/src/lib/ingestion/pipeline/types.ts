@@ -92,12 +92,15 @@ export const eventCandidateSchema = z.object({
 export type EventCandidate = z.infer<typeof eventCandidateSchema>;
 
 const snippetEntry = z.string().max(8000);
+const markdownSnippetEntry = z.string().max(12000);
 
 export const rawSnippetsSchema = z
   .object({
     listing: snippetEntry.optional(),
     detail: snippetEntry.optional(),
     pricing: snippetEntry.optional(),
+    /** Bright Data markdown page extract; preferred LLM context when present. */
+    markdown: markdownSnippetEntry.optional(),
   })
   .strict();
 
@@ -147,6 +150,9 @@ export function clampRawSnippets(snippets: RawSnippets): RawSnippets {
   }
   if (snippets.pricing !== undefined) {
     out.pricing = truncateSnippet(snippets.pricing, 4000);
+  }
+  if (snippets.markdown !== undefined) {
+    out.markdown = truncateSnippet(snippets.markdown, 10000);
   }
   return out;
 }

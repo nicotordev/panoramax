@@ -18,16 +18,10 @@ import {
   type IngestionError,
   type IngestionResult,
 } from "../core/shared.js";
+import { ticketingSnippetLooksPolluted } from "../pipeline/descriptionPollution.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
+import { scrapeDetailHtmlAndOptionalMarkdown } from "../pipeline/scrapeDetailForIngest.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
-
-/** UI chrome that often appears when extractBodyText captures the whole layout. */
-const TICKETPLUS_CRUFT_RE =
-  /País seleccionado|Ticketplus\.com|add_shopping_cart|keyboard_arrow|COMPRAR\s+INFO\s+EVENTO|Iniciar sesión|Location\s+Countries|¿Necesitas más ayuda\?/i;
-
-function snippetLooksPolluted(text: string): boolean {
-  return TICKETPLUS_CRUFT_RE.test(text);
-}
 
 /**
  * Never use a raw body-text slice as description (it pulls nav, country picker, etc.).
@@ -38,12 +32,12 @@ function pickTicketplusDescription(params: {
   introText: string | null;
 }): string | null {
   const eventBlock = params.eventText?.trim();
-  if (eventBlock && !snippetLooksPolluted(eventBlock)) {
+  if (eventBlock && !ticketingSnippetLooksPolluted(eventBlock)) {
     return eventBlock;
   }
 
   const intro = params.introText?.trim() ?? "";
-  if (intro.length >= 24 && !snippetLooksPolluted(intro)) {
+  if (intro.length >= 24 && !ticketingSnippetLooksPolluted(intro)) {
     return intro;
   }
 
@@ -78,7 +72,8 @@ export const ingestTicketplus = async ({
 
   for (const sourceUrl of candidateLinks) {
     try {
-      const detailHtml = await scrapeHtml(sourceUrl);
+      const { html: detailHtml, markdown: pageMarkdown } =
+        await scrapeDetailHtmlAndOptionalMarkdown(sourceUrl, enrichWithLlm);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
       const h2Texts = $$("h2")
@@ -210,13 +205,14 @@ export const ingestTicketplus = async ({
           categoryText ? `CATEGORY:\n${categoryText}` : null,
           eventText ? `EVENT_TEXT:\n${eventText}` : null,
           introText ? `INTRO:\n${introText}` : null,
-          eventText && !snippetLooksPolluted(eventText)
+          eventText && !ticketingSnippetLooksPolluted(eventText)
             ? `PAGE_TAIL:\n${text.slice(0, 1200)}`
             : `PAGE_TEXT:\n${text.slice(0, 4000)}`,
         ]
           .filter(Boolean)
           .join("\n\n"),
         pricing: priceText ?? undefined,
+        ...(pageMarkdown ? { markdown: pageMarkdown } : {}),
       };
 
       const { event, enrichFailed, enrichError } = await finalizeIngestedEvent(

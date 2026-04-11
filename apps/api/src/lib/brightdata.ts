@@ -1,5 +1,5 @@
-import "dotenv/config";
 import { bdclient } from "@brightdata/sdk";
+import "dotenv/config";
 
 const apiKey = process.env.BRIGHTDATA_API_KEY;
 
@@ -35,14 +35,7 @@ type ScrapeResponse =
       status_code?: number;
     };
 
-export const scrapeHtml = async (url: string) => {
-  const result = (await brightDataClient.scrapeUrl(url, {
-    format: "json",
-    dataFormat: "html",
-    timeout: 30000,
-    country: "cl",
-  })) as ScrapeResponse;
-
+function unwrapJsonScrapeBody(result: ScrapeResponse, url: string): string {
   if (typeof result === "string") {
     return result;
   }
@@ -52,4 +45,27 @@ export const scrapeHtml = async (url: string) => {
   }
 
   return result.body;
+}
+
+export const scrapeHtml = async (url: string) => {
+  const result = (await brightDataClient.scrapeUrl(url, {
+    format: "json",
+    dataFormat: "html",
+    timeout: 30000,
+    country: "cl",
+  })) as ScrapeResponse;
+
+  return unwrapJsonScrapeBody(result, url);
+};
+
+/** Web Unlocker markdown extract (structure-preserving; good LLM input). */
+export const scrapeMarkdown = async (url: string) => {
+  const result = (await brightDataClient.scrapeUrl(url, {
+    format: "json",
+    dataFormat: "markdown",
+    timeout: 30000,
+    country: "cl",
+  })) as ScrapeResponse;
+
+  return unwrapJsonScrapeBody(result, url);
 };

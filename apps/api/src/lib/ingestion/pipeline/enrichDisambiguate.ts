@@ -11,6 +11,7 @@ import { clampRawSnippets, llmEnrichmentPatchSchema } from "./types.js";
 
 const systemPrompt = `You help normalize scraped cultural events in Chile (Spanish).
 You receive a JSON "candidate" from an HTML parser plus text "snippets" from the page.
+The snippets object may include "markdown": a Bright Data markdown extract of the same event URL (headings, lists, less layout noise than raw page text). When "markdown" is present, prefer it over long PAGE_TEXT / PAGE_TAIL blobs for editorial description and summary, while still applying all safety rules below.
 Return a JSON object with ONLY fields you can support using those snippets. Omit keys you cannot improve.
 Rules:
 - Never invent dates, times, URLs, ticket links, sectors, tiers, or prices not clearly implied by the snippets.
