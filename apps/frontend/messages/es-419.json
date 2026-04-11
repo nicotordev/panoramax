@@ -7,7 +7,12 @@
     "free": "Gratis",
     "login": "Iniciar sesión",
     "openMainMenu": "Abrir menú principal",
-    "closeMenu": "Cerrar menú"
+    "closeMenu": "Cerrar menú",
+    "live_events": "Eventos en vivo",
+    "themeMenu": "Tema de color",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeSystem": "Sistema"
   },
   "HomePage": {
     "liveEvents": "Eventos en vivo",

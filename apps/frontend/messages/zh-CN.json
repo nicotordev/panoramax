@@ -7,7 +7,12 @@
     "free": "免费",
     "login": "登录",
     "openMainMenu": "打开主菜单",
-    "closeMenu": "关闭菜单"
+    "closeMenu": "关闭菜单",
+    "live_events": "现场活动",
+    "themeMenu": "颜色主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统"
   },
   "HomePage": {
     "liveEvents": "现场活动",
@@ -67,7 +72,14 @@
     "bentoGridIntro": "精心挑选的近期亮点活动，一眼快速了解。",
     "viewCompleteAgenda": "查看完整日程",
     "event": "活动",
-    "free": "免费"
+    "free": "免费",
+    "home": "首页",
+    "events": "活动",
+    "thisWeek": "本周",
+    "login": "登录",
+    "openMainMenu": "打开主菜单",
+    "closeMenu": "关闭菜单",
+    "live_events": "现场活动"
   },
   "BlogPage": {
     "title": "Panoramax 笔记",

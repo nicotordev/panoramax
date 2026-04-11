@@ -66,7 +66,7 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
     event.translation?.priceText || event.priceText
 
   return (
-    <section className="mx-auto w-full max-w-7xl border-t border-border/40 px-6 py-16 lg:px-8 lg:py-20">
+    <section className="mx-auto w-full max-w-7xl border-t border-border/40 px-6 py-16 lg:px-8">
       <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

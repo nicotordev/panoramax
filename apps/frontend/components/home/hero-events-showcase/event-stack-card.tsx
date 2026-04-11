@@ -5,16 +5,16 @@ import { getEventCardImageSrc } from "@/lib/event-card.utils"
 import { formatCategoryLabel, formatEventWhen } from "@/lib/home-showcase.utils"
 import { cn } from "@/lib/utils"
 import type { EventStackCardProps } from "@/types/home-showcase"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useState } from "react"
 
 const positionStyles: Record<EventStackCardProps["position"], string> = {
-  left: "w-[min(75vw,230px)] border-border/30 shadow-lg",
+  left: "w-[min(70vw,220px)] border-white/10 opacity-40 blur-[1px]",
   center:
-    "animate-float w-[min(88vw,290px)] border-border/60 shadow-2xl ring-1 ring-ring/30",
-  right: "w-[min(75vw,230px)] border-border/30 shadow-lg",
+    "w-[min(85vw,300px)] border-white/20 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-white/20",
+  right: "w-[min(70vw,220px)] border-white/10 opacity-40 blur-[1px]",
 }
 
 export function EventStackCard({
@@ -29,39 +29,37 @@ export function EventStackCard({
 
   const variants = {
     left: {
-      x: "-35%",
-      scale: 0.78,
-      rotate: -8,
-      opacity: 0.4,
-      filter: "brightness(0.75) blur(1px)",
+      x: "-45%",
+      scale: 0.8,
+      rotate: -12,
+      opacity: 0.5,
+      filter: "brightness(0.6) blur(2px)",
     },
     center: {
       x: "0%",
       scale: 1,
       rotate: 0,
       opacity: 1,
-      filter: "brightness(1) blur(0px)",
+      filter: "brightness(1.1) blur(0px)",
     },
     right: {
-      x: "35%",
-      scale: 0.78,
-      rotate: 8,
-      opacity: 0.4,
-      filter: "brightness(0.75) blur(1px)",
+      x: "45%",
+      scale: 0.8,
+      rotate: 12,
+      opacity: 0.5,
+      filter: "brightness(0.6) blur(2px)",
     },
     enter: (dir: number) => ({
-      x: dir > 0 ? "52%" : "-52%",
-      scale: 0.68,
-      rotate: dir > 0 ? 12 : -12,
+      x: dir > 0 ? "100%" : "-100%",
+      scale: 0.5,
       opacity: 0,
-      filter: "brightness(0.6) blur(4px)",
+      filter: "blur(10px)",
     }),
     exit: (dir: number) => ({
-      x: dir > 0 ? "-52%" : "52%",
-      scale: 0.68,
-      rotate: dir > 0 ? -12 : 12,
+      x: dir > 0 ? "-100%" : "100%",
+      scale: 0.5,
       opacity: 0,
-      filter: "brightness(0.6) blur(4px)",
+      filter: "blur(10px)",
     }),
   }
 
@@ -73,47 +71,58 @@ export function EventStackCard({
       exit="exit"
       variants={variants}
       transition={{
-        duration: 0.55,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1], // Custom quint ease
       }}
-      className="absolute inset-0 will-change-transform"
+      className="absolute inset-0 flex items-center justify-center will-change-transform"
       style={{ zIndex }}
     >
       <Link
         href={`/events/${event.slug || event.id}`}
-        className="flex items-center justify-center"
+        className="group relative block transition-transform duration-500 hover:scale-[1.02]"
       >
         <div
           className={cn(
-            "relative aspect-3/4 overflow-hidden rounded-2xl border",
+            "relative aspect-3/4 overflow-hidden rounded-3xl border bg-card/20 backdrop-blur-md transition-all duration-500",
             positionStyles[position]
           )}
         >
+          {/* Overlay de brillo superior (Glow effect) */}
+          <div className="absolute inset-0 z-10 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+
           <Image
             src={imageSrc}
             alt={displayTitle}
             fill
-            className="pointer-events-none object-cover"
+            className="pointer-events-none object-cover transition-transform duration-700 group-hover:scale-110"
             priority={position === "center"}
-            sizes="(max-width: 768px) 88vw, 290px"
-            onError={() => {
-              setImageSrc(EVENT_PLACEHOLDER_IMAGE.src)
-            }}
+            sizes="(max-width: 768px) 80vw, 300px"
+            onError={() => setImageSrc(EVENT_PLACEHOLDER_IMAGE.src)}
           />
 
-          {position === "center" && (
-            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-card via-card/55 to-transparent p-5 pt-10">
-              <span className="mb-2 inline-block rounded-full border border-primary/40 bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold tracking-widest text-primary uppercase">
-                {formatCategoryLabel(event.categoryPrimary)}
-              </span>
-              <p className="line-clamp-2 text-sm leading-snug font-bold text-card-foreground">
-                {displayTitle}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {formatEventWhen(event, locale)}
-              </p>
-            </div>
-          )}
+          {/* Gradiente de información optimizado para OKLCH */}
+          <AnimatePresence>
+            {position === "center" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/90 via-black/40 to-transparent p-6 pt-12"
+              >
+                <span className="mb-3 inline-block rounded-lg border border-primary/50 bg-primary/20 px-2.5 py-1 text-[10px] font-bold tracking-wider text-primary-foreground uppercase shadow-sm backdrop-blur-md">
+                  {formatCategoryLabel(event.categoryPrimary)}
+                </span>
+
+                <h3 className="line-clamp-2 text-base leading-tight font-extrabold text-white drop-shadow-md">
+                  {displayTitle}
+                </h3>
+
+                <div className="mt-2 flex items-center gap-2 text-xs font-medium text-white/70">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
+                  {formatEventWhen(event, locale)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </Link>
     </motion.div>

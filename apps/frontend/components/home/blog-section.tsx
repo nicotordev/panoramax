@@ -39,7 +39,8 @@ type BlogSectionProps = {
 
 const EmptyState = ({ messages }: { messages: BlogSectionMessages }) => (
   <Card className="border-border/60 bg-card/80 p-10 text-center shadow-sm backdrop-blur-sm">
-    <h3 className="font-heading text-lg font-semibold text-foreground">
+    <h3 className="font-heading text-lg font-semibold text-foreground flex items-center justify-center gap-2">
+      <HiBookOpen className="size-5 text-primary" />
       {messages.emptyTitle}
     </h3>
     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">

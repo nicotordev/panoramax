@@ -4,6 +4,7 @@ import EventsBentoGrid from "@/components/home/events-bento-grid"
 import HeroSection from "@/components/home/hero-section"
 import HomeCtaSection from "@/components/home/home-cta-section"
 import PanoramaxFeatures from "@/components/home/panoramax-features"
+import MainNav from "@/components/layout/main-nav"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
 import { createDateFormatter } from "@/lib/date-format"
 import serverClient from "@/lib/server.client"
@@ -58,6 +59,7 @@ export default async function Page({ params }: HomePageProps) {
 
   return (
     <main className="bg-background">
+      <MainNav />
       <HeroSection events={heroResponse.data} eventsMeta={heroResponse.meta} />
       <EventCategoryPicker allEvents={randomEventsResponse.data} />
       <EventsBentoGrid events={weeklyEventsResponse.data} />

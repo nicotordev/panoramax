@@ -7,7 +7,12 @@
     "free": "Kostenlos",
     "login": "Anmelden",
     "openMainMenu": "Hauptmenü öffnen",
-    "closeMenu": "Menü schließen"
+    "closeMenu": "Menü schließen",
+    "live_events": "Live-Events",
+    "themeMenu": "Farbschema",
+    "themeLight": "Hell",
+    "themeDark": "Dunkel",
+    "themeSystem": "System"
   },
   "HomePage": {
     "liveEvents": "Live-Events",

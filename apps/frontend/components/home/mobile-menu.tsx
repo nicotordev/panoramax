@@ -1,14 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { HiOutlineBars3 } from "react-icons/hi2"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { navigation } from "@/data/misc.data"
 import { Link } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react"
+import { HiOutlineBars3, HiOutlineXMark } from "react-icons/hi2"
 import Logo from "../common/logo"
-import { HiOutlineXMark } from "react-icons/hi2"
+import ThemeSwitcher from "../layout/theme-switcher"
 
 export default function MobileMenu() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -45,16 +45,19 @@ export default function MobileMenu() {
         >
           <div className="flex items-center justify-between">
             <Logo />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label={t("closeMenu")}
-            >
-              <HiOutlineXMark className="size-6" aria-hidden />
-            </Button>
+            <div className="flex items-center gap-1">
+              <ThemeSwitcher variant="default" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label={t("closeMenu")}
+              >
+                <HiOutlineXMark className="size-6" aria-hidden />
+              </Button>
+            </div>
           </div>
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-border">

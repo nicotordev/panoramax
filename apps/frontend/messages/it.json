@@ -7,7 +7,12 @@
     "free": "Gratis",
     "login": "Accedi",
     "openMainMenu": "Apri il menu principale",
-    "closeMenu": "Chiudi il menu"
+    "closeMenu": "Chiudi il menu",
+    "live_events": "Eventi dal vivo",
+    "themeMenu": "Tema colore",
+    "themeLight": "Chiaro",
+    "themeDark": "Scuro",
+    "themeSystem": "Sistema"
   },
   "HomePage": {
     "liveEvents": "Eventi dal vivo",
@@ -67,7 +72,14 @@
     "bentoGridIntro": "Una selezione curata degli eventi da non perdere in questi giorni.",
     "viewCompleteAgenda": "Vedi agenda completa",
     "event": "Evento",
-    "free": "Gratis"
+    "free": "Gratis",
+    "home": "Home",
+    "events": "Eventi",
+    "thisWeek": "Questa settimana",
+    "login": "Accedi",
+    "openMainMenu": "Apri il menu principale",
+    "closeMenu": "Chiudi il menu",
+    "live_events": "Eventi dal vivo"
   },
   "BlogPage": {
     "title": "Note Panoramax",
