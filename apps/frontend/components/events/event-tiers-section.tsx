@@ -3,26 +3,47 @@ import type { Event, EventTier } from "@/types/api"
 import { getTranslations } from "next-intl/server"
 
 function tierPriceSummary(tier: EventTier): string | null {
-  const parts = [tier.totalPrice, tier.price].filter(Boolean)
-  if (parts.length === 0) return null
-  return parts.join(" · ")
+  const total = tier.totalPrice?.trim()
+  if (total) return total
+  const price = tier.price?.trim()
+  return price || null
 }
 
 function tierDetailText(tier: EventTier): string | null {
-  return (
-    tier.translation?.rawText?.trim() || tier.rawText?.trim() || null
-  )
+  return tier.translation?.rawText?.trim() || tier.rawText?.trim() || null
 }
 
 type EventTiersSectionProps = {
   event: Event
 }
 
-export default async function EventTiersSection({ event }: EventTiersSectionProps) {
+export default async function EventTiersSection({
+  event,
+}: EventTiersSectionProps) {
   const tiers = event.tiers ?? []
-  if (tiers.length === 0) return null
+  const priceTextFallback =
+    event.translation?.priceText?.trim() || event.priceText?.trim() || null
+
+  if (tiers.length === 0 && !priceTextFallback) {
+    return null
+  }
 
   const t = await getTranslations("EventPage")
+
+  if (tiers.length === 0 && priceTextFallback) {
+    return (
+      <section className="space-y-3">
+        <h2 className="font-heading text-lg font-semibold text-foreground">
+          {t("tierPrices")}
+        </h2>
+        <Card className="border-border/60 bg-card/90 p-4 shadow-xs ring-1 ring-border/50">
+          <p className="text-sm leading-6 whitespace-pre-wrap text-foreground/90">
+            {priceTextFallback}
+          </p>
+        </Card>
+      </section>
+    )
+  }
 
   return (
     <section className="space-y-3">
@@ -44,12 +65,14 @@ export default async function EventTiersSection({ event }: EventTiersSectionProp
                       {tier.translation?.name?.trim() || tier.name}
                     </p>
                     {detail ? (
-                      <p className="text-sm leading-6 text-muted-foreground">{detail}</p>
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        {detail}
+                      </p>
                     ) : null}
                   </div>
                   <div className="shrink-0 text-left sm:text-right">
                     {summary ? (
-                      <p className="text-base font-semibold tabular-nums text-primary">
+                      <p className="text-base font-semibold text-primary tabular-nums">
                         {summary}{" "}
                         <span className="text-sm font-medium text-muted-foreground">
                           {tier.currency}

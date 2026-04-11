@@ -8,12 +8,12 @@ import { buttonVariants } from "@/data/variants.data"
 import { Link } from "@/i18n/navigation"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
+import { googleMapsIframeSrc } from "@/lib/event-display"
 import {
   formatCategoryLabel,
   formatEventLocation,
   formatEventWhen,
 } from "@/lib/home-showcase.utils"
-import { googleMapsIframeSrc } from "@/lib/event-display"
 import serverClient from "@/lib/server.client"
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
@@ -81,8 +81,11 @@ export default async function EventPage({ params }: EventPageProps) {
   const bodyText = eventDescription(event)
   const statusLabel = event.status.replace(/_/g, " ")
   const hasMapEmbed = Boolean(googleMapsIframeSrc(event))
-  const hasTiers = (event.tiers?.length ?? 0) > 0
-  const showSidebar = hasMapEmbed || hasTiers
+  const priceTextBlurb =
+    event.translation?.priceText?.trim() || event.priceText?.trim() || null
+  const hasStructuredTiers = (event.tiers?.length ?? 0) > 0
+  const hasPricingColumn = hasStructuredTiers || Boolean(priceTextBlurb)
+  const showSidebar = hasMapEmbed || hasPricingColumn
 
   return (
     <main className="min-h-screen bg-background">
@@ -215,11 +218,13 @@ export default async function EventPage({ params }: EventPageProps) {
             <div className="space-y-10 lg:col-span-7">
               <EventPracticalGrid event={event} locale={locale} />
               <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{t("status")}:</span>{" "}
+                <span className="font-medium text-foreground">
+                  {t("status")}:
+                </span>{" "}
                 <span className="capitalize">{statusLabel}</span>
               </p>
             </div>
-            <aside className="space-y-10 lg:col-span-5 lg:sticky lg:top-28 lg:self-start">
+            <aside className="space-y-10 lg:sticky lg:top-28 lg:col-span-5 lg:self-start">
               <EventMapEmbed event={event} />
               <EventTiersSection event={event} />
             </aside>
@@ -228,7 +233,9 @@ export default async function EventPage({ params }: EventPageProps) {
           <div className="mt-10 space-y-10">
             <EventPracticalGrid event={event} locale={locale} />
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{t("status")}:</span>{" "}
+              <span className="font-medium text-foreground">
+                {t("status")}:
+              </span>{" "}
               <span className="capitalize">{statusLabel}</span>
             </p>
           </div>
