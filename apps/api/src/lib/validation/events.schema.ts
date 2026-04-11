@@ -109,6 +109,10 @@ export const eventIdParamSchema = z.object({
   id: z.uuid(),
 });
 
+export const eventSlugParamSchema = z.object({
+  slug: z.string().min(1).max(512),
+});
+
 export type EventCreateInput = z.infer<typeof eventCreateBodySchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateBodySchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;

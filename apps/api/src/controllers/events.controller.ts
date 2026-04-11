@@ -46,6 +46,25 @@ class EventsController {
     }
   };
 
+  public getBySlug = async (c: Context) => {
+    try {
+      const { slug } = validParam<{ slug: string }>(c);
+      const { locale } = validQuery<EventLocaleQuery>(c);
+      const event = await eventsService.getBySlug(slug, locale);
+      if (!event) {
+        throw new HTTPException(404, { message: "Event not found" });
+      }
+      const body = responseEnhancer.ok(event, "Event fetched successfully");
+      return c.json(body, body.status as ContentfulStatusCode);
+    } catch (error) {
+      const body = responseEnhancer.errorHandler(
+        error,
+        "Failed to fetch event",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    }
+  };
+
   public create = async (c: Context) => {
     try {
       const { locale } = validQuery<EventLocaleQuery>(c);

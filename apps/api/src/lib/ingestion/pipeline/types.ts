@@ -108,7 +108,8 @@ export const llmEnrichmentPatchSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional(),
   summary: z.string().optional(),
-  description: z.string().optional(),
+  /** Null clears a parser placeholder so the public page does not show scraped chrome. */
+  description: z.union([z.string(), z.null()]).optional(),
   venueName: z.string().optional(),
   address: z.string().optional(),
   categoryPrimary: categoryPrimaryZ.optional(),

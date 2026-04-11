@@ -1,4 +1,3 @@
-import SiteFooter from "@/components/layout/site-footer"
 import { routing } from "@/i18n/routing"
 import { hasLocale } from "next-intl"
 import { setRequestLocale } from "next-intl/server"

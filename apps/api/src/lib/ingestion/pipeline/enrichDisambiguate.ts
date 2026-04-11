@@ -22,6 +22,7 @@ Rules:
 - For Chilean ticketing pages, use currency "CLP" when prices are shown as "$" or "CLP" and no other currency is stated.
 - Only set price, fee, and totalPrice when each value is explicitly supported by the snippets.
 - If the candidate description or summary looks polluted by boilerplate, replace it only when the snippets contain real editorial event text.
+- If candidate.description is long (>600 chars) OR contains ticketing UI junk (e.g. "País seleccionado", "Ticketplus", "add_shopping_cart", "keyboard_arrow", "COMPRAR INFO EVENTO", "Iniciar sesión"), you MUST return a fresh Spanish "description" (about 120–900 characters) built ONLY from EVENT_TEXT, INTRO, TITLE, DATE, VENUE, ADDRESS in snippets — never copy menus or chrome. If snippets have no usable editorial prose, return "description": null and set needsReview to true with short Spanish reviewNotes.
 - categoryPrimary must be one of the allowed enum strings if you set it.
 - audience must be one of the allowed enum strings if you set it.
 - If information is ambiguous, set needsReview to true and a short Spanish reviewNotes.
@@ -60,7 +61,7 @@ const loosePatchSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional(),
   summary: z.string().optional(),
-  description: z.string().optional(),
+  description: z.union([z.string(), z.null()]).optional(),
   venueName: z.string().optional(),
   address: z.string().optional(),
   categoryPrimary: z.string().optional(),
@@ -109,9 +110,10 @@ function normalizeMoney(value: unknown): number | null | undefined {
     return undefined;
   }
 
-  const normalized = cleaned.includes(".") && cleaned.includes(",")
-    ? cleaned.replace(/\./g, "").replace(",", ".")
-    : cleaned.replace(/\./g, "");
+  const normalized =
+    cleaned.includes(".") && cleaned.includes(",")
+      ? cleaned.replace(/\./g, "").replace(",", ".")
+      : cleaned.replace(/\./g, "");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
@@ -150,24 +152,16 @@ function normalizeTiers(tiers: z.infer<typeof looseTierSchema>[] | undefined) {
       return {
         name,
         price:
-          normalizeMoney(tier.price) ??
-          normalizeMoney(tier.amount) ??
-          null,
+          normalizeMoney(tier.price) ?? normalizeMoney(tier.amount) ?? null,
         fee: normalizeMoney(tier.fee) ?? null,
         totalPrice:
-          normalizeMoney(tier.totalPrice) ??
-          normalizeMoney(tier.total) ??
-          null,
+          normalizeMoney(tier.totalPrice) ?? normalizeMoney(tier.total) ?? null,
         currency: tier.currency?.trim() || "CLP",
         sortOrder: tier.sortOrder ?? index,
         rawText: tier.rawText ?? null,
       };
     })
-    .filter(
-      (
-        tier,
-      ): tier is NonNullable<typeof tier> => tier !== null,
-    );
+    .filter((tier): tier is NonNullable<typeof tier> => tier !== null);
 }
 
 function normalizeAudience(value: string | undefined) {
@@ -252,7 +246,10 @@ async function requestStructuredObject<T>({
   const fallback = await client.chat.completions.create({
     model,
     messages: [
-      { role: "system", content: `${system}\nRespond with a valid JSON object only.` },
+      {
+        role: "system",
+        content: `${system}\nRespond with a valid JSON object only.`,
+      },
       { role: "user", content: user },
     ],
     temperature: 0,
@@ -261,9 +258,7 @@ async function requestStructuredObject<T>({
 
   const content = fallback.choices[0]?.message.content;
   const text = Array.isArray(content)
-    ? content
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("")
+    ? content.map((part) => ("text" in part ? part.text : "")).join("")
     : (content ?? "");
   const jsonText = extractJsonObject(text);
 
@@ -325,7 +320,9 @@ export async function enrichDisambiguateCandidate(
     schema: loosePatchSchema,
     schemaName: "event_enrichment_patch",
   });
-  const normalizedPatch = llmEnrichmentPatchSchema.parse(normalizePatch(parsed));
+  const normalizedPatch = llmEnrichmentPatchSchema.parse(
+    normalizePatch(parsed),
+  );
   if (
     (!normalizedPatch.tiers || normalizedPatch.tiers.length === 0) &&
     safeSnippets.pricing?.trim()

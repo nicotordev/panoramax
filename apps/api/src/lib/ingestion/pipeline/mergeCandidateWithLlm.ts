@@ -1,5 +1,19 @@
 import type { EventCandidate, LlmEnrichmentPatch } from "./types.js";
 
+function mergeDescriptionField(
+  base: EventCandidate["description"],
+  patch: LlmEnrichmentPatch["description"],
+): EventCandidate["description"] {
+  if (patch === undefined) {
+    return base;
+  }
+  if (patch === null) {
+    return null;
+  }
+  const trimmed = patch.trim();
+  return trimmed.length ? trimmed : null;
+}
+
 function mergeTags(base: string[] | undefined, extra: string[] | undefined) {
   const out = [...(base ?? [])];
   if (!extra?.length) {
@@ -46,9 +60,10 @@ export function mergeCandidateWithLlm(
     subtitle:
       patch.subtitle !== undefined ? patch.subtitle : candidate.subtitle,
     summary: patch.summary?.trim() ? patch.summary.trim() : candidate.summary,
-    description: patch.description?.trim()
-      ? patch.description.trim()
-      : candidate.description,
+    description: mergeDescriptionField(
+      candidate.description,
+      patch.description,
+    ),
     venueName: patch.venueName?.trim()
       ? patch.venueName.trim()
       : candidate.venueName,

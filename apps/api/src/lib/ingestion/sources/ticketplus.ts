@@ -21,6 +21,35 @@ import {
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
+/** UI chrome that often appears when extractBodyText captures the whole layout. */
+const TICKETPLUS_CRUFT_RE =
+  /País seleccionado|Ticketplus\.com|add_shopping_cart|keyboard_arrow|COMPRAR\s+INFO\s+EVENTO|Iniciar sesión|Location\s+Countries|¿Necesitas más ayuda\?/i;
+
+function snippetLooksPolluted(text: string): boolean {
+  return TICKETPLUS_CRUFT_RE.test(text);
+}
+
+/**
+ * Never use a raw body-text slice as description (it pulls nav, country picker, etc.).
+ * Prefer the regex "event" block; otherwise a clean intro; otherwise leave null for LLM/title-only.
+ */
+function pickTicketplusDescription(params: {
+  eventText: string | null;
+  introText: string | null;
+}): string | null {
+  const eventBlock = params.eventText?.trim();
+  if (eventBlock && !snippetLooksPolluted(eventBlock)) {
+    return eventBlock;
+  }
+
+  const intro = params.introText?.trim() ?? "";
+  if (intro.length >= 24 && !snippetLooksPolluted(intro)) {
+    return intro;
+  }
+
+  return null;
+}
+
 export const ingestTicketplus = async ({
   page = 1,
   limit,
@@ -120,7 +149,7 @@ export const ingestTicketplus = async ({
           /[A-ZÁÉÍÓÚ0-9"'“”().,:;!¿? \-/]{20,}Detalles del Evento:[^]+?(?:¿Necesitas más ayuda\?|VER MÁS)/i,
         )?.[0] ??
         null;
-      const description = eventText ?? text.slice(0, 1800);
+      const description = pickTicketplusDescription({ eventText, introText });
       const imageUrl =
         $$('meta[property="og:image"]').attr("content") ??
         $$("img")
@@ -181,7 +210,9 @@ export const ingestTicketplus = async ({
           categoryText ? `CATEGORY:\n${categoryText}` : null,
           eventText ? `EVENT_TEXT:\n${eventText}` : null,
           introText ? `INTRO:\n${introText}` : null,
-          `PAGE_TEXT:\n${text.slice(0, 4000)}`,
+          eventText && !snippetLooksPolluted(eventText)
+            ? `PAGE_TAIL:\n${text.slice(0, 1200)}`
+            : `PAGE_TEXT:\n${text.slice(0, 4000)}`,
         ]
           .filter(Boolean)
           .join("\n\n"),

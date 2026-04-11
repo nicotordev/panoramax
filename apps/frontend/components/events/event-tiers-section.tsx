@@ -1,0 +1,77 @@
+import { Card } from "@/components/ui/card"
+import type { Event, EventTier } from "@/types/api"
+import { getTranslations } from "next-intl/server"
+
+function tierPriceSummary(tier: EventTier): string | null {
+  const parts = [tier.totalPrice, tier.price].filter(Boolean)
+  if (parts.length === 0) return null
+  return parts.join(" · ")
+}
+
+function tierDetailText(tier: EventTier): string | null {
+  return (
+    tier.translation?.rawText?.trim() || tier.rawText?.trim() || null
+  )
+}
+
+type EventTiersSectionProps = {
+  event: Event
+}
+
+export default async function EventTiersSection({ event }: EventTiersSectionProps) {
+  const tiers = event.tiers ?? []
+  if (tiers.length === 0) return null
+
+  const t = await getTranslations("EventPage")
+
+  return (
+    <section className="space-y-3">
+      <h2 className="font-heading text-lg font-semibold text-foreground">
+        {t("tierPrices")}
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {tiers.map((tier) => {
+          const summary = tierPriceSummary(tier)
+          const detail = tierDetailText(tier)
+          const fee = tier.fee?.trim()
+
+          return (
+            <li key={tier.id}>
+              <Card className="gap-3 border-border/60 bg-card/90 p-4 shadow-xs ring-1 ring-border/50">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="font-heading text-base font-semibold text-foreground">
+                      {tier.translation?.name?.trim() || tier.name}
+                    </p>
+                    {detail ? (
+                      <p className="text-sm leading-6 text-muted-foreground">{detail}</p>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-left sm:text-right">
+                    {summary ? (
+                      <p className="text-base font-semibold tabular-nums text-primary">
+                        {summary}{" "}
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {tier.currency}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {tier.currency}
+                      </p>
+                    )}
+                    {fee ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t("tierFee")}: {fee} {tier.currency}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </Card>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}

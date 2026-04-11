@@ -7,6 +7,7 @@ import {
   eventCreateBodySchema,
   eventIdParamSchema,
   eventLocaleQuerySchema,
+  eventSlugParamSchema,
   eventUpdateBodySchema,
   listEventsQuerySchema,
 } from "../../lib/validation/events.schema.js";
@@ -33,6 +34,13 @@ eventsRoutes.get(
   "/current-week",
   zValidator("query", listEventsQuerySchema, zodValidationHook),
   eventsController.listCurrentWeekEvents,
+);
+
+eventsRoutes.get(
+  "/slug/:slug",
+  zValidator("param", eventSlugParamSchema, zodValidationHook),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
+  eventsController.getBySlug,
 );
 
 eventsRoutes.get(

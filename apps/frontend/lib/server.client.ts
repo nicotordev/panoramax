@@ -64,6 +64,28 @@ function isEventsListPayload(value: unknown): value is EventsListPayload {
   )
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value
+  )
+}
+
+function eventFromApiEnvelope(data: unknown): Event | null {
+  if (!isApiEnvelope(data) || !data.success) {
+    return null
+  }
+  const payload = data.data
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    !("id" in payload) ||
+    typeof (payload as { id?: unknown }).id !== "string"
+  ) {
+    return null
+  }
+  return payload as Event
+}
+
 function isBlogPostsListPayload(value: unknown): value is BlogPostsListPayload {
   return (
     typeof value === "object" &&
@@ -193,13 +215,37 @@ class ServerClient {
     page?: number
     limit?: number
     status?: Event["status"]
+    categoryPrimary?: Event["categoryPrimary"]
+    commune?: string
+    city?: string
+    region?: string
+    source?: string
+    locale?: ApiTranslationLocale
   }): Promise<GetEventsResult> {
     try {
       const page = params?.page ?? 1
       const limit = params?.limit ?? 100
-      const status = params?.status
+      const {
+        status,
+        categoryPrimary,
+        commune,
+        city,
+        region,
+        source,
+        locale,
+      } = params ?? {}
       const response = await this.axios.get<unknown>("/api/v1/events", {
-        params: { page, limit, status },
+        params: {
+          page,
+          limit,
+          status,
+          categoryPrimary,
+          commune,
+          city,
+          region,
+          source,
+          locale,
+        },
       })
       return normalizeEventsResponse(response.data)
     } catch (error) {
@@ -259,6 +305,81 @@ class ServerClient {
         "An unexpected error occurred while fetching current week events."
       )
     }
+  }
+
+  async getEventById(
+    id: string,
+    params?: { locale?: ApiTranslationLocale }
+  ): Promise<Event | null> {
+    try {
+      const locale = params?.locale
+      const response = await this.axios.get<unknown>(
+        `/api/v1/events/${encodeURIComponent(id)}`,
+        { params: { locale } }
+      )
+      return eventFromApiEnvelope(response.data)
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return null
+      }
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "[ServerClient] Axios error when fetching event by id:",
+          error.response?.status,
+          error.response?.data || error.message
+        )
+      } else {
+        console.error(
+          "[ServerClient] Unknown error when fetching event by id:",
+          error
+        )
+      }
+      return null
+    }
+  }
+
+  async getEventBySlug(
+    slug: string,
+    params?: { locale?: ApiTranslationLocale }
+  ): Promise<Event | null> {
+    try {
+      const locale = params?.locale
+      const response = await this.axios.get<unknown>(
+        `/api/v1/events/slug/${encodeURIComponent(slug)}`,
+        { params: { locale } }
+      )
+      return eventFromApiEnvelope(response.data)
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return null
+      }
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "[ServerClient] Axios error when fetching event by slug:",
+          error.response?.status,
+          error.response?.data || error.message
+        )
+      } else {
+        console.error(
+          "[ServerClient] Unknown error when fetching event by slug:",
+          error
+        )
+      }
+      return null
+    }
+  }
+
+  /**
+   * Resolves UUID (legacy links) or slug (public URLs) to a single event.
+   */
+  async getEventForPublicPage(
+    slugOrId: string,
+    params?: { locale?: ApiTranslationLocale }
+  ): Promise<Event | null> {
+    if (isUuid(slugOrId)) {
+      return this.getEventById(slugOrId, params)
+    }
+    return this.getEventBySlug(slugOrId, params)
   }
 
   async getBlogPosts(params?: {

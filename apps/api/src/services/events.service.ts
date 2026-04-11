@@ -338,6 +338,29 @@ class EventsService {
     return row ? applyLocaleTranslations(row, locale) : null;
   }
 
+  public async getBySlug(
+    slug: string,
+    locale?: TranslationLocale,
+  ): Promise<ReturnType<typeof serializeEvent> | null> {
+    const row = await prisma.event.findUnique({
+      where: { slug },
+      include: {
+        translations: locale
+          ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+          : true,
+        tiers: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            translations: locale
+              ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+              : true,
+          },
+        },
+      },
+    });
+    return row ? applyLocaleTranslations(row, locale) : null;
+  }
+
   public async create(data: EventCreateInput, locale?: TranslationLocale) {
     const { tiers, ...eventData } = data;
     const row = await prisma.$transaction(async (tx) => {
