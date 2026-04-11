@@ -120,6 +120,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@layer components {
+  .site-footer {
+    @apply border-t border-border/80 bg-muted/40 text-foreground backdrop-blur-md dark:bg-muted/20;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

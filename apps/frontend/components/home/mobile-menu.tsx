@@ -44,7 +44,7 @@ export default function MobileMenu() {
           className="w-full gap-0 overflow-y-auto p-6 sm:max-w-sm"
         >
           <div className="flex items-center justify-between">
-            <Logo />
+            <Logo className="h-9 w-auto brightness-0 invert" />
             <div className="flex items-center gap-1">
               <ThemeSwitcher variant="default" />
               <Button

@@ -1,3 +1,4 @@
+import SiteFooter from "@/components/layout/site-footer"
 import { routing } from "@/i18n/routing"
 import { hasLocale } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
@@ -24,5 +25,9 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale)
 
-  return children
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div className="flex-1">{children}</div>
+    </div>
+  )
 }

@@ -1,6 +1,7 @@
 import { buttonVariants } from "@/data/variants.data"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
+import { HiArrowLongRight } from "react-icons/hi2"
 
 export type HomeCtaMessages = {
   title: string
@@ -22,65 +23,62 @@ export default function HomeCtaSection({
 }: HomeCtaSectionProps) {
   return (
     <section
-      className="relative isolate bg-transparent"
+      className="relative isolate overflow-hidden bg-background py-24 sm:py-32"
       aria-labelledby="home-cta-heading"
     >
-      <div className="px-6 py-16 sm:py-20 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-2xl text-center">
+      {/* Elementos de diseño: Glows de fondo usando tus variables OKLCH */}
+      <div
+        className="absolute top-1/2 left-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 opacity-20 blur-[120px]"
+        style={{ background: "var(--cta-glow-inner)" }}
+      />
+
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="relative mx-auto max-w-2xl text-center">
+          {/* Badge sutil superior */}
+          <span className="mb-6 inline-block text-sm font-bold tracking-[0.2em] text-primary uppercase">
+            {messages.secondaryCta.split(" ")[0]}{" "}
+            {/* O una key de traducción nueva */}
+          </span>
+
           <h2
             id="home-cta-heading"
-            className="font-heading text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl"
+            className="font-heading text-4xl font-bold tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
           >
             {messages.title}
           </h2>
-          <p className="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-muted-foreground">
+
+          <p className="mx-auto mt-8 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground">
             {messages.description}
           </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+
+          <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-x-8">
             <Link
               href={primaryHref}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "rounded-md px-5 shadow-xs"
+                "group relative h-14 rounded-full px-8 text-base font-bold transition-all hover:scale-105 hover:shadow-[0_0_30px_var(--cta-glow-inner)]"
               )}
             >
               {messages.primaryCta}
+              <div className="absolute inset-0 rounded-full border-2 border-white/10" />
             </Link>
+
             <Link
               href={secondaryHref}
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "lg" }),
-                "h-auto px-0 text-base font-semibold text-foreground hover:bg-transparent hover:text-muted-foreground"
-              )}
+              className="group flex items-center gap-2 text-base font-bold text-foreground transition-colors hover:text-primary"
             >
-              {messages.secondaryCta}{" "}
-              <span aria-hidden="true" className="inline-block">
-                →
-              </span>
+              {messages.secondaryCta}
+              <HiArrowLongRight
+                className="size-5 transition-transform group-hover:translate-x-2"
+                aria-hidden="true"
+              />
             </Link>
           </div>
         </div>
       </div>
-      <svg
-        viewBox="0 0 1024 1024"
-        aria-hidden
-        focusable="false"
-        className="pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[min(64rem,180vw)] -translate-x-1/2 -translate-y-1/2 mask-[radial-gradient(closest-side,white,transparent)]"
-      >
-        <circle
-          r={512}
-          cx={512}
-          cy={512}
-          fill="url(#home-cta-radial-glow)"
-          fillOpacity={0.5}
-        />
-        <defs>
-          <radialGradient id="home-cta-radial-glow">
-            <stop stopColor="var(--cta-glow-inner)" />
-            <stop offset={1} stopColor="var(--cta-glow-outer)" />
-          </radialGradient>
-        </defs>
-      </svg>
+
+      {/* Decoración de grid sutil (opcional para textura) */}
+      <div className="absolute inset-0 -z-20 h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.03] dark:opacity-[0.05]" />
     </section>
   )
 }

@@ -141,22 +141,22 @@ export default function HeroEventsShowcase({
             </Link>
           </div>
 
-          <h1 className="font-serif text-5xl leading-[1.08] font-bold tracking-tight text-balance text-background sm:text-6xl xl:text-7xl">
+          <h1 className="font-serif text-5xl leading-[1.08] font-bold tracking-tight text-balance text-background dark:text-foreground/90 sm:text-6xl xl:text-7xl">
             {t("titleStart")}{" "}
             <span className="text-primary">{t("titleHighlight")}</span>
           </h1>
 
-          <p className="mt-6 max-w-md text-base leading-relaxed text-background/85">
+          <p className="mt-6 max-w-md text-base leading-relaxed text-background dark:text-foreground/85">
             {t("description")}
           </p>
 
           <div className="mt-14 flex flex-wrap gap-8">
             {highlightStats.map(({ value, label }) => (
               <div key={label}>
-                <p className="font-serif text-2xl font-bold text-background">
+                <p className="font-serif text-2xl font-bold text-background dark:text-foreground">
                   {value}
                 </p>
-                <p className="mt-0.5 text-xs text-background/75">{label}</p>
+                <p className="mt-0.5 text-xs text-background dark:text-foreground/75">{label}</p>
               </div>
             ))}
           </div>
