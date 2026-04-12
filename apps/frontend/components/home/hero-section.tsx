@@ -14,7 +14,7 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-background">
       {/* 1. Fondo de Video con Doble Capa de Contraste */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-10">
         <video
           autoPlay
           muted
@@ -27,7 +27,7 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
             type="video/webm"
           />
           <source
-            src="/assets/video/11999048_1920_1080_25fps.optimized.mp4"
+            src="/assets/video/11999048_1920_1080_25fps.mp4"
             type="video/mp4"
           />
         </video>

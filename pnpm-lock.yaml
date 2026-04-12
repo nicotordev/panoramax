@@ -159,6 +159,9 @@ importers:
       react-instantsearch:
         specifier: ^7.16.2
         version: 7.29.0(algoliasearch@5.50.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-instantsearch-nextjs:
+        specifier: ^1.1.4
+        version: 1.1.4(next@16.1.7(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-instantsearch@7.29.0(algoliasearch@5.50.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       react-resizable-panels:
         specifier: ^4.9.0
         version: 4.9.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4465,6 +4468,12 @@ packages:
     peerDependencies:
       algoliasearch: '>= 3.1 < 6'
       react: '>= 16.8.0 < 20'
+
+  react-instantsearch-nextjs@1.1.4:
+    resolution: {integrity: sha512-05gmrbx3W+HifrEtQv4oShHtNaUNiDacfiAC6w+W31DZk86lpAb1N8Gag0ik3Iy3sYP6WXwIzmwdiF9vWkOYoA==}
+    peerDependencies:
+      next: '>= 13.4 < 17'
+      react-instantsearch: '>= 7.1.0 < 8'
 
   react-instantsearch@7.29.0:
     resolution: {integrity: sha512-+foJJVVsSLNY3K5rkB2dGEUoOyLMGTZsl9I8Zwwf/nZQqwoqH0QIvkenlJh7deyAq1/u19bq+H5EVX2d+EjRJQ==}
@@ -9829,6 +9838,12 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.2.4)
       zod: 4.3.6
       zod-to-json-schema: 3.24.6(zod@4.3.6)
+
+  react-instantsearch-nextjs@1.1.4(next@16.1.7(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-instantsearch@7.29.0(algoliasearch@5.50.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)):
+    dependencies:
+      '@swc/helpers': 0.5.18
+      next: 16.1.7(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-instantsearch: 7.29.0(algoliasearch@5.50.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
   react-instantsearch@7.29.0(algoliasearch@5.50.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:

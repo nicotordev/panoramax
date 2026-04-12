@@ -185,7 +185,7 @@ export default async function EventPage({ params }: EventPageProps) {
               <div className="bg-muted/10">
                 <EventPracticalGrid event={event} locale={locale} />
               </div>
-              <div className="flex items-center justify-between bg-muted/30 px-6 py-4 sm:px-8 text-sm rounded-full">
+              <div className="flex items-center justify-between bg-muted/30 px-4 py-4 text-sm rounded-full">
                  <span className="font-medium text-muted-foreground">{t("status")}</span>
                  <span className="capitalize inline-flex items-center rounded-full bg-background shadow-sm border border-border/50 px-3 py-1 text-xs font-bold text-foreground">
                    {statusLabel}

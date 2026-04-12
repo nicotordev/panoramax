@@ -59,7 +59,7 @@ export default async function Page({ params }: HomePageProps) {
   })
 
   return (
-    <main className="bg-background">
+    <main>
       <MainNav />
       <HeroSection events={heroResponse.data} eventsMeta={heroResponse.meta} />
       <EventCategoryPicker allEvents={randomEventsResponse.data} />

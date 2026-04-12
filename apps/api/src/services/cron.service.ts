@@ -24,6 +24,8 @@ class CronService {
     let lastId: string | undefined = undefined;
 
     try {
+      await algolia.ensureEventsIndexSettings();
+
       while (true) {
         // Use keyset pagination for efficient batching
         const events: EventWithAllRelations[] = await prisma.event.findMany({

@@ -20,6 +20,30 @@ class Algolia {
     );
   }
 
+  /**
+   * Declares facet attributes for the events index. Without this, Algolia
+   * returns no refinement values for `useRefinementList` in the storefront.
+   * Requires an API key with `settings` ACL (typically the Admin API key).
+   */
+  /** @returns whether Algolia accepted the settings update */
+  public async ensureEventsIndexSettings(): Promise<boolean> {
+    try {
+      await this.client.setSettings({
+        indexName: EVENTS_INDEX_NAME,
+        indexSettings: {
+          attributesForFaceting: ["city", "categoryPrimary", "audience"],
+        },
+      });
+      return true;
+    } catch (error) {
+      console.warn(
+        "Algolia setSettings failed (facets may stay empty until an Admin API key with settings ACL is configured):",
+        error,
+      );
+      return false;
+    }
+  }
+
   public async saveEvents<TEvent extends { id: string }>(events: TEvent[]) {
     if (events.length === 0) {
       return;
