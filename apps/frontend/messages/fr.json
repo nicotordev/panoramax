@@ -93,6 +93,17 @@
     "coverCredit": "Image",
     "openNote": "Lire la note"
   },
+  "ThisWeekPage": {
+    "title": "Cette semaine",
+    "eyebrow": "Semaine sélectionnée",
+    "description": "Temps forts et listes pour la semaine en cours pour décider vite.",
+    "emptyTitle": "Pas encore d’événements cette semaine",
+    "emptyDescription": "Revenez bientôt ou ouvrez le guide complet.",
+    "browseEvents": "Tous les événements",
+    "backHome": "Retour à l’accueil",
+    "moreHeading": "Encore cette semaine",
+    "moreDescription": "D’autres événements avant la fin de la semaine."
+  },
   "EventPage": {
     "backHome": "Retour à l’accueil",
     "notFoundTitle": "Événement introuvable",

@@ -1,25 +1,10 @@
 "use client"
 
-import { AnimatePresence } from "framer-motion"
-import { Link } from "@/i18n/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useLocale, useTranslations } from "next-intl"
-import {
-  HiArrowLongRight,
-  HiChevronLeft,
-  HiChevronRight,
-  HiLightBulb,
-} from "react-icons/hi2"
 import {
   AUTOPLAY_INTERVAL_MS,
   INTERACTION_COOLDOWN_MS,
 } from "@/constants/home.constants"
-import { DotIndicators } from "./dot-indicators"
-import { EventStackCard } from "./event-stack-card"
-import type {
-  HeroEventsShowcaseProps,
-  EventStackCardItem,
-} from "@/types/home-showcase"
+import { Link } from "@/i18n/navigation"
 import {
   formatCategoryLabel,
   formatEventLocation,
@@ -27,6 +12,21 @@ import {
   formatStatInt,
   wrapIndex,
 } from "@/lib/home-showcase.utils"
+import type {
+  EventStackCardItem,
+  HeroEventsShowcaseProps,
+} from "@/types/home-showcase"
+import { AnimatePresence } from "framer-motion"
+import { useLocale, useTranslations } from "next-intl"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  HiArrowLongRight,
+  HiChevronLeft,
+  HiChevronRight,
+  HiLightBulb,
+} from "react-icons/hi2"
+import { DotIndicators } from "./dot-indicators"
+import { EventStackCard } from "./event-stack-card"
 
 /**
  * Contenido principal del hero (copy + carrusel).
@@ -141,7 +141,7 @@ export default function HeroEventsShowcase({
             </Link>
           </div>
 
-          <h1 className="font-serif text-5xl leading-[1.08] font-bold tracking-tight text-balance text-background dark:text-foreground/90 sm:text-6xl xl:text-7xl">
+          <h1 className="font-serif text-5xl leading-[1.08] font-bold tracking-tight text-balance text-background sm:text-6xl xl:text-7xl dark:text-foreground/90">
             {t("titleStart")}{" "}
             <span className="text-primary">{t("titleHighlight")}</span>
           </h1>
@@ -156,7 +156,9 @@ export default function HeroEventsShowcase({
                 <p className="font-serif text-2xl font-bold text-background dark:text-foreground">
                   {value}
                 </p>
-                <p className="mt-0.5 text-xs text-background dark:text-foreground/75">{label}</p>
+                <p className="mt-0.5 text-xs text-background dark:text-foreground/75">
+                  {label}
+                </p>
               </div>
             ))}
           </div>
@@ -179,7 +181,7 @@ export default function HeroEventsShowcase({
                 >
                   {stackCards.map(({ event, position, zIndex }) => (
                     <EventStackCard
-                      key={event.id}
+                      key={position}
                       event={event}
                       locale={locale}
                       position={position}

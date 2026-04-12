@@ -1,14 +1,14 @@
 "use client"
 
 import { EVENT_PLACEHOLDER_IMAGE } from "@/constants/common.constants"
+import { Link } from "@/i18n/navigation"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
 import { formatCategoryLabel, formatEventWhen } from "@/lib/home-showcase.utils"
 import { cn } from "@/lib/utils"
 import type { EventStackCardProps } from "@/types/home-showcase"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
-import { Link } from "@/i18n/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const positionStyles: Record<EventStackCardProps["position"], string> = {
   left: "w-[min(70vw,220px)] border-white/10 opacity-40 blur-[1px]",
@@ -24,8 +24,14 @@ export function EventStackCard({
   zIndex,
   direction,
 }: EventStackCardProps) {
-  const [imageSrc, setImageSrc] = useState(getEventCardImageSrc(event.imageUrl))
+  const [imageSrc, setImageSrc] = useState(() =>
+    getEventCardImageSrc(event.imageUrl)
+  )
   const displayTitle = event.translation?.title || event.title
+
+  useEffect(() => {
+    setImageSrc(getEventCardImageSrc(event.imageUrl))
+  }, [event.id, event.imageUrl])
 
   const variants = {
     left: {

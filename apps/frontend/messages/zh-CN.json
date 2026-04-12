@@ -93,6 +93,17 @@
     "coverCredit": "图片",
     "openNote": "阅读全文"
   },
+  "ThisWeekPage": {
+    "title": "本周",
+    "eyebrow": "精选一周",
+    "description": "本周已排期的精选与完整列表，帮你快速做计划。",
+    "emptyTitle": "本周暂时没有活动",
+    "emptyDescription": "稍后再来，或浏览完整活动指南。",
+    "browseEvents": "查看全部活动",
+    "backHome": "返回首页",
+    "moreHeading": "本周更多",
+    "moreDescription": "本周结束前还有哪些活动。"
+  },
   "EventPage": {
     "backHome": "返回首页",
     "notFoundTitle": "未找到活动",

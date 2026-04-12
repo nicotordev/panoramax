@@ -93,6 +93,17 @@
     "coverCredit": "Image",
     "openNote": "Read note"
   },
+  "ThisWeekPage": {
+    "title": "This week",
+    "eyebrow": "Curated week",
+    "description": "Highlights and listings scheduled for the current week—so you can plan quickly.",
+    "emptyTitle": "No events this week yet",
+    "emptyDescription": "Check back soon or open the full event guide.",
+    "browseEvents": "Browse all events",
+    "backHome": "Back to home",
+    "moreHeading": "More this week",
+    "moreDescription": "Other events before the week ends."
+  },
   "EventPage": {
     "backHome": "Back to home",
     "notFoundTitle": "Event not found",

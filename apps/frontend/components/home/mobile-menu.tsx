@@ -1,5 +1,6 @@
 "use client"
 
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { navigation } from "@/data/misc.data"
@@ -13,6 +14,7 @@ import ThemeSwitcher from "../layout/theme-switcher"
 export default function MobileMenu() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const t = useTranslations("Navigation")
+  const { isSignedIn, isLoaded } = useAuth()
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)")
@@ -73,12 +75,22 @@ export default function MobileMenu() {
                 ))}
               </div>
               <div className="py-6">
-                <Link
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-accent"
-                >
-                  {t("login")}
-                </Link>
+                {isLoaded &&
+                  (isSignedIn ? (
+                    <div className="-mx-3 flex justify-center rounded-lg px-3 py-2">
+                      <UserButton />
+                    </div>
+                  ) : (
+                    <SignInButton mode="modal">
+                      <button
+                        type="button"
+                        className="-mx-3 block w-full rounded-lg px-3 py-2.5 text-left text-base/7 font-semibold text-foreground hover:bg-accent"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {t("login")}
+                      </button>
+                    </SignInButton>
+                  ))}
               </div>
             </div>
           </div>

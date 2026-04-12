@@ -86,6 +86,17 @@
     "coverCredit": "Bild",
     "openNote": "Beitrag lesen"
   },
+  "ThisWeekPage": {
+    "title": "Diese Woche",
+    "eyebrow": "Kuratierte Woche",
+    "description": "Highlights und Termine für die laufende Woche – schnell entscheiden und planen.",
+    "emptyTitle": "Noch keine Events diese Woche",
+    "emptyDescription": "Schau bald wieder vor oder öffne die komplette Event-Übersicht.",
+    "browseEvents": "Alle Events",
+    "backHome": "Zur Startseite",
+    "moreHeading": "Mehr diese Woche",
+    "moreDescription": "Weitere Events vor Wochenende."
+  },
   "EventPage": {
     "backHome": "Zur Startseite",
     "notFoundTitle": "Event nicht gefunden",

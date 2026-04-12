@@ -35,6 +35,24 @@ type ScrapeResponse =
       status_code?: number;
     };
 
+function readTimeoutMs(envKey: string, fallback: number): number {
+  const raw = process.env[envKey];
+  if (raw === undefined || raw === "") {
+    return fallback;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 5_000 ? n : fallback;
+}
+
+const HTML_SCRAPE_TIMEOUT_MS = readTimeoutMs(
+  "BRIGHTDATA_SCRAPE_TIMEOUT_MS",
+  30_000,
+);
+const MARKDOWN_SCRAPE_TIMEOUT_MS = readTimeoutMs(
+  "BRIGHTDATA_MARKDOWN_TIMEOUT_MS",
+  90_000,
+);
+
 function unwrapJsonScrapeBody(result: ScrapeResponse, url: string): string {
   if (typeof result === "string") {
     return result;
@@ -51,7 +69,7 @@ export const scrapeHtml = async (url: string) => {
   const result = (await brightDataClient.scrapeUrl(url, {
     format: "json",
     dataFormat: "html",
-    timeout: 30000,
+    timeout: HTML_SCRAPE_TIMEOUT_MS,
     country: "cl",
   })) as ScrapeResponse;
 
@@ -63,7 +81,7 @@ export const scrapeMarkdown = async (url: string) => {
   const result = (await brightDataClient.scrapeUrl(url, {
     format: "json",
     dataFormat: "markdown",
-    timeout: 30000,
+    timeout: MARKDOWN_SCRAPE_TIMEOUT_MS,
     country: "cl",
   })) as ScrapeResponse;
 

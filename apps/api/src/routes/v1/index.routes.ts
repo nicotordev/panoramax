@@ -1,5 +1,6 @@
 import type { Env, Schema } from "hono";
 import { Hono } from "hono";
+import authRoutes from "./auth.routes.js";
 import blogRoutes from "./blog.routes.js";
 import cronRoutes from "./cron.routes.js";
 import eventsRoutes from "./events.routes.js";
@@ -9,6 +10,7 @@ import tasksRoutes from "./tasks.routes.js";
 
 const v1Routes = new Hono<Env, Schema, "/v1">();
 
+v1Routes.route("/auth", authRoutes);
 v1Routes.route("/health", healthRoutes);
 v1Routes.route("/sources", sourcesRoutes);
 v1Routes.route("/tasks", tasksRoutes);

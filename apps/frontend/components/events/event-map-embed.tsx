@@ -22,7 +22,7 @@ export default async function EventMapEmbed({ event }: EventMapEmbedProps) {
       <h2 className="font-heading text-lg font-semibold text-foreground">
         {t("mapEmbedTitle")}
       </h2>
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/30 shadow-sm ring-1 ring-border/40">
+      <div className="overflow-hidden border border-border/60 bg-muted/30 shadow-sm ring-1 ring-border/40">
         <div className="relative aspect-[4/3] w-full min-h-[220px] sm:aspect-video sm:min-h-[280px]">
           <iframe
             title={t("mapEmbedTitle")}

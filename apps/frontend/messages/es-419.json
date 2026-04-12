@@ -86,6 +86,17 @@
     "coverCredit": "Imagen",
     "openNote": "Leer nota"
   },
+  "ThisWeekPage": {
+    "title": "Esta semana",
+    "eyebrow": "Semana curada",
+    "description": "Destacados y listados de la semana en curso para planificar rápido.",
+    "emptyTitle": "Todavía no hay eventos esta semana",
+    "emptyDescription": "Vuelve pronto o abrí la guía completa de eventos.",
+    "browseEvents": "Ver todos los eventos",
+    "backHome": "Volver al inicio",
+    "moreHeading": "Más esta semana",
+    "moreDescription": "Otros eventos antes de que termine la semana."
+  },
   "EventPage": {
     "backHome": "Volver al inicio",
     "notFoundTitle": "Evento no encontrado",

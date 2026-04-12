@@ -271,15 +271,16 @@ class ServerClient {
     page?: number
     limit?: number
     status?: Event["status"]
+    locale?: ApiTranslationLocale
   }): Promise<GetEventsResult> {
     try {
       const page = params?.page ?? 1
       const limit = params?.limit ?? 100
-      const status = params?.status
+      const { status, locale } = params ?? {}
       const response = await this.axios.get<unknown>(
         "/api/v1/events/current-week",
         {
-          params: { page, limit, status },
+          params: { page, limit, status, locale },
         }
       )
       return normalizeEventsResponse(response.data)

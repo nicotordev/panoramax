@@ -1,5 +1,6 @@
 "use client"
 
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs"
 import { navigation } from "@/data/misc.data"
 import { useTranslations } from "next-intl"
 import Link from "next/link"
@@ -10,6 +11,8 @@ import ThemeSwitcher from "./theme-switcher"
 
 export default function MainNav() {
   const t = useTranslations("HomePage")
+  const { isSignedIn, isLoaded } = useAuth()
+
   return (
     <header className="fixed top-0 right-0 left-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
@@ -37,13 +40,26 @@ export default function MainNav() {
 
         <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:gap-3">
           <ThemeSwitcher variant="darkNav" />
-          <Link
-            href="#"
-            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-all hover:pr-8 hover:shadow-[0_0_25px_var(--cta-glow-inner)]"
-          >
-            <span>{t("login")}</span>
-            <HiArrowLongRight className="size-4 transition-all group-hover:translate-x-1" />
-          </Link>
+          {isLoaded &&
+            (isSignedIn ? (
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "size-9 ring-2 ring-white/20",
+                  },
+                }}
+              />
+            ) : (
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="group relative inline-flex cursor-pointer items-center gap-2 overflow-hidden rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-all hover:pr-8 hover:shadow-[0_0_25px_var(--cta-glow-inner)]"
+                >
+                  <span>{t("login")}</span>
+                  <HiArrowLongRight className="size-4 transition-all group-hover:translate-x-1" />
+                </button>
+              </SignInButton>
+            ))}
         </div>
       </nav>
     </header>

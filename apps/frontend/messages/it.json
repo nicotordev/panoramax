@@ -93,6 +93,17 @@
     "coverCredit": "Immagine",
     "openNote": "Leggi la nota"
   },
+  "ThisWeekPage": {
+    "title": "Questa settimana",
+    "eyebrow": "Settimana curata",
+    "description": "In evidenza e in programma per la settimana corrente, per decidere in fretta.",
+    "emptyTitle": "Nessun evento questa settimana",
+    "emptyDescription": "Torna presto o apri la guida completa agli eventi.",
+    "browseEvents": "Tutti gli eventi",
+    "backHome": "Torna alla home",
+    "moreHeading": "Altri eventi questa settimana",
+    "moreDescription": "Altri appuntamenti prima della fine della settimana."
+  },
   "EventPage": {
     "backHome": "Torna alla home",
     "notFoundTitle": "Evento non trovato",

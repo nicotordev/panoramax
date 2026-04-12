@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI, { APIError } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { mapCategory } from "../core/shared.js";
@@ -90,6 +90,69 @@ function extractJsonObject(text: string): string | null {
   }
 
   return text.slice(start, end + 1);
+}
+
+function sleepMs(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function isInsufficientQuotaError(error: unknown): boolean {
+  if (!(error instanceof APIError)) {
+    return false;
+  }
+  const body = error.error as { code?: string; message?: string } | undefined;
+  if (body?.code === "insufficient_quota") {
+    return true;
+  }
+  const msg = (error.message ?? body?.message ?? "").toLowerCase();
+  return msg.includes("exceeded your current quota");
+}
+
+function isOpenAiRetryableError(error: unknown): boolean {
+  if (!(error instanceof APIError)) {
+    return false;
+  }
+  if (isInsufficientQuotaError(error)) {
+    return false;
+  }
+  return error.status === 429 || error.status === 503;
+}
+
+function openAiRetryDelayMs(
+  error: unknown,
+  attemptZeroBased: number,
+  baseMs: number,
+): number {
+  if (error instanceof APIError && error.headers) {
+    const h = error.headers as Headers | Record<string, string>;
+    const ra =
+      typeof (h as Headers).get === "function"
+        ? (h as Headers).get("retry-after")
+        : ((h as Record<string, string>)["retry-after"] ??
+          (h as Record<string, string>)["Retry-After"]);
+    if (ra) {
+      const seconds = Number.parseInt(String(ra), 10);
+      if (Number.isFinite(seconds) && seconds > 0) {
+        return Math.min(seconds * 1000, 120_000);
+      }
+    }
+  }
+  const capped = Math.min(baseMs * 2 ** attemptZeroBased, 60_000);
+  return capped + Math.floor(Math.random() * 400);
+}
+
+function readOpenAiRetryConfig() {
+  const maxRetries = Math.max(
+    0,
+    Number.parseInt(process.env.OPENAI_MAX_RETRIES ?? "6", 10) || 6,
+  );
+  const baseMs = Math.max(
+    500,
+    Number.parseInt(process.env.OPENAI_RETRY_BASE_MS ?? "2000", 10) || 2000,
+  );
+  return { maxRetries, baseMs };
 }
 
 function normalizeMoney(value: unknown): number | null | undefined {
@@ -225,50 +288,73 @@ async function requestStructuredObject<T>({
   schema: z.ZodType<T>;
   schemaName: string;
 }): Promise<T> {
-  try {
-    const completion = await client.chat.completions.parse({
+  const { maxRetries, baseMs } = readOpenAiRetryConfig();
+
+  const runOnce = async (): Promise<T> => {
+    try {
+      const completion = await client.chat.completions.parse({
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: zodResponseFormat(schema, schemaName),
+        temperature: 0.2,
+      });
+
+      const parsed = completion.choices[0]?.message.parsed;
+      if (parsed) {
+        return parsed;
+      }
+    } catch (error) {
+      if (isOpenAiRetryableError(error)) {
+        throw error;
+      }
+      // Fall through to plain JSON mode.
+    }
+
+    const fallback = await client.chat.completions.create({
       model,
       messages: [
-        { role: "system", content: system },
+        {
+          role: "system",
+          content: `${system}\nRespond with a valid JSON object only.`,
+        },
         { role: "user", content: user },
       ],
-      response_format: zodResponseFormat(schema, schemaName),
-      temperature: 0.2,
+      temperature: 0,
+      response_format: { type: "json_object" },
     });
 
-    const parsed = completion.choices[0]?.message.parsed;
-    if (parsed) {
-      return parsed;
+    const content = fallback.choices[0]?.message.content;
+    const text = Array.isArray(content)
+      ? content.map((part) => ("text" in part ? part.text : "")).join("")
+      : (content ?? "");
+    const jsonText = extractJsonObject(text);
+
+    if (!jsonText) {
+      throw new Error(`OpenAI ${schemaName} fallback returned no JSON object`);
     }
-  } catch {
-    // Fall through to plain JSON mode.
+
+    const data = JSON.parse(jsonText) as unknown;
+    return schema.parse(data);
+  };
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await runOnce();
+    } catch (error) {
+      lastError = error;
+      if (!isOpenAiRetryableError(error) || attempt === maxRetries) {
+        throw error;
+      }
+      const waitMs = openAiRetryDelayMs(error, attempt, baseMs);
+      await sleepMs(waitMs);
+    }
   }
 
-  const fallback = await client.chat.completions.create({
-    model,
-    messages: [
-      {
-        role: "system",
-        content: `${system}\nRespond with a valid JSON object only.`,
-      },
-      { role: "user", content: user },
-    ],
-    temperature: 0,
-    response_format: { type: "json_object" },
-  });
-
-  const content = fallback.choices[0]?.message.content;
-  const text = Array.isArray(content)
-    ? content.map((part) => ("text" in part ? part.text : "")).join("")
-    : (content ?? "");
-  const jsonText = extractJsonObject(text);
-
-  if (!jsonText) {
-    throw new Error(`OpenAI ${schemaName} fallback returned no JSON object`);
-  }
-
-  const data = JSON.parse(jsonText) as unknown;
-  return schema.parse(data);
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 async function extractPricingTiers(

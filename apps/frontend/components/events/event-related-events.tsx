@@ -1,4 +1,10 @@
-import { Card } from "@/components/ui/card"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card"
 import { getRelatedEventsForEvent } from "@/lib/event-related"
 import { eventCardTitle } from "@/lib/event-display"
 import { formatEventLocation, formatEventWhen } from "@/lib/home-showcase.utils"
@@ -38,13 +44,13 @@ export default async function EventRelatedEvents({
             <li key={ev.id}>
               <Card
                 size="sm"
-                className="h-full gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md"
+                className="h-full gap-0 overflow-hidden py-0! transition-shadow hover:shadow-md"
               >
                 <Link
                   href={href}
-                  className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="group flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <div className="relative aspect-[16/9] w-full shrink-0 bg-muted">
+                  <div className="relative aspect-video w-full shrink-0 bg-muted">
                     <Image
                       src={getEventCardImageSrc(ev.imageUrl)}
                       alt={title}
@@ -54,20 +60,24 @@ export default async function EventRelatedEvents({
                       unoptimized
                     />
                   </div>
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {formatEventWhen(ev, locale)}
-                    </span>
-                    <span className="font-heading text-base font-semibold leading-snug text-foreground group-hover:text-primary">
-                      {title}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatEventLocation(ev)}
-                    </span>
-                    <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary">
-                      {t("relatedSee")}
-                      <HiArrowUpRight className="size-4" aria-hidden />
-                    </span>
+                  <div className="flex flex-1 flex-col gap-2 pt-2">
+                    <CardHeader className="pb-0">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {formatEventWhen(ev, locale)}
+                      </span>
+                      <CardTitle className="font-heading text-base leading-snug font-semibold text-foreground group-hover:text-primary">
+                        {title}
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        {formatEventLocation(ev)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="mt-auto px-4 pt-2 pb-4">
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                        {t("relatedSee")}
+                        <HiArrowUpRight className="size-4" aria-hidden />
+                      </span>
+                    </CardFooter>
                   </div>
                 </Link>
               </Card>
