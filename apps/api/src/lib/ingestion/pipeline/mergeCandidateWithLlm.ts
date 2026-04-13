@@ -79,7 +79,11 @@ export function mergeCandidateWithLlm(
       : candidate.locationNotes,
     reviewNotes:
       patch.reviewNotes !== undefined
-        ? patch.reviewNotes
+        ? patch.reviewNotes === null
+          ? null
+          : patch.reviewNotes.trim()
+            ? patch.reviewNotes.trim()
+            : null
         : candidate.reviewNotes,
     needsReview: candidate.needsReview || Boolean(patch.needsReview === true),
     audience: patch.audience ?? candidate.audience,

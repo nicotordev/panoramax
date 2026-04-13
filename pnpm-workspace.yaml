@@ -2,6 +2,7 @@ packages:
   - apps/*
 
 onlyBuiltDependencies:
+  - '@clerk/shared'
   - '@prisma/engines'
   - '@swc/core'
   - msw

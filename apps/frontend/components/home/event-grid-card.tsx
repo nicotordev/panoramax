@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "../ui/card"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
+import Image from "next/image";
 
 interface EventGridCardProps {
   event: Event
@@ -35,16 +36,18 @@ export function EventGridCard({
     <Card
       size="sm"
       className={cn(
-        "w-full flex-shrink-0 cursor-pointer transition-all hover:shadow-lg sm:w-80",
+        "w-full shrink-0 cursor-pointer transition-all hover:shadow-lg sm:w-80 pt-0!",
         isSelected ? "ring-2 ring-primary" : ""
       )}
       onClick={() => onSelect?.(event)}
     >
       <AspectRatio ratio={16 / 9}>
-        <img
+        <Image
           src={imageSrc}
           alt={event.title}
-          className="h-full w-full rounded-t-xl object-cover"
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           loading="lazy"
         />
       </AspectRatio>

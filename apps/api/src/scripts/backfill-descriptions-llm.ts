@@ -12,6 +12,35 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Run async work with a fixed concurrency limit; preserves result order vs `items`.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) {
+    return [];
+  }
+  const results: R[] = new Array(items.length);
+  const limit = Math.max(1, Math.min(concurrency, items.length));
+  let nextIndex = 0;
+
+  async function worker() {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= items.length) {
+        return;
+      }
+      results[i] = await mapper(items[i]!, i);
+    }
+  }
+
+  await Promise.all(Array.from({ length: limit }, () => worker()));
+  return results;
+}
+
 function readArg(flag: string, fallback?: string): string | undefined {
   const eq = process.argv.find((a) => a.startsWith(`${flag}=`));
   if (eq) {
@@ -41,6 +70,10 @@ async function main() {
     0,
     parseInt(readArg("--delay-ms", "0") ?? "0", 10) || 0,
   );
+  const concurrency = Math.max(
+    1,
+    parseInt(readArg("--concurrency", "6") ?? "6", 10) || 6,
+  );
   const sourceFilter = readArg("--source");
 
   if (!process.env.OPENAI_API_KEY) {
@@ -61,7 +94,7 @@ async function main() {
   };
 
   console.log(
-    `Description LLM backfill: dryRun=${dryRun} onlyPolluted=${onlyPolluted} processAll=${processAll} maxBackfills=${processAll ? "all" : String(maxBackfills)} batchSize=${batchSize} source=${sourceFilter ?? "(any)"} (429/503: retries via OPENAI_MAX_RETRIES / OPENAI_RETRY_BASE_MS)`,
+    `Description LLM backfill: dryRun=${dryRun} onlyPolluted=${onlyPolluted} processAll=${processAll} maxBackfills=${processAll ? "all" : String(maxBackfills)} batchSize=${batchSize} concurrency=${concurrency} source=${sourceFilter ?? "(any)"} (429/503: retries via OPENAI_MAX_RETRIES / OPENAI_RETRY_BASE_MS)`,
   );
 
   let ok = 0;
@@ -89,15 +122,38 @@ async function main() {
 
     scanned += rows.length;
 
-    for (const event of rows) {
-      if (backfills >= maxBackfills) {
-        break;
+    const remainingSlots = maxBackfills - backfills;
+    const work: EventWithTiersForBackfill[] = [];
+    if (remainingSlots > 0) {
+      for (const event of rows) {
+        if (work.length >= remainingSlots) {
+          break;
+        }
+        if (
+          onlyPolluted &&
+          !storedDescriptionLooksPolluted(event.description)
+        ) {
+          continue;
+        }
+        work.push(event);
       }
-      if (onlyPolluted && !storedDescriptionLooksPolluted(event.description)) {
-        continue;
-      }
+    }
 
-      const result = await backfillEventDescriptionWithLlm(event, { dryRun });
+    const results = await mapWithConcurrency(
+      work,
+      concurrency,
+      async (event) => {
+        const result = await backfillEventDescriptionWithLlm(event, { dryRun });
+        if (delayMs > 0) {
+          await sleep(delayMs);
+        }
+        return result;
+      },
+    );
+
+    for (let i = 0; i < work.length; i++) {
+      const event = work[i]!;
+      const result = results[i]!;
       if (!result.ok) {
         failed++;
         console.warn(`FAIL ${event.slug}: ${result.error}`);
@@ -118,12 +174,9 @@ async function main() {
           console.log(`skip ${event.slug} (no text changes)`);
         }
       }
-
-      backfills++;
-      if (delayMs > 0) {
-        await sleep(delayMs);
-      }
     }
+
+    backfills += work.length;
 
     if (backfills >= maxBackfills) {
       break;

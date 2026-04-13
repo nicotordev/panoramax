@@ -27,7 +27,7 @@ export default async function EventsPage({ params }: EventsPageProps) {
       <div className="pointer-events-none absolute top-0 right-[-10%] h-125 w-[50%] rounded-full bg-primary/10 blur-[140px]" />
       <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] h-100 w-[40%] rounded-full bg-blue-500/10 blur-[140px]" />
 
-      <div className="relative z-10 container mx-auto mt-12 w-full max-w-360 px-4 md:px-6">
+      <div className="relative z-10 container mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
         <div className="mb-12 max-w-3xl space-y-4">
           <Badge
             variant="outline"

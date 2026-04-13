@@ -1,6 +1,10 @@
 "use client"
 
 import type { Event } from "@/types/api"
+import "swiper/css"
+import "swiper/css/free-mode"
+import { FreeMode, Mousewheel } from "swiper/modules"
+import { Swiper, SwiperSlide } from "swiper/react"
 import { EventGalleryCard } from "./event-gallery-card"
 import { EventGridCard } from "./event-grid-card"
 
@@ -34,15 +38,28 @@ export default function EventsList({
   }
 
   return (
-    <div className="flex flex-1 flex-wrap gap-6">
+    <Swiper
+      modules={[FreeMode, Mousewheel]}
+      slidesPerView="auto"
+      spaceBetween={16}
+      freeMode={{ enabled: true, momentum: true }}
+      mousewheel={{ forceToAxis: true }}
+      watchOverflow
+      className="w-full py-1"
+      wrapperClass="!items-stretch"
+    >
       {events.map((event) => (
-        <EventGridCard
+        <SwiperSlide
           key={event.id}
-          event={event}
-          selectedId={selectedId}
-          onSelect={onEventSelect}
-        />
+          className="h-auto! w-[min(100%,18rem)]! sm:w-80!"
+        >
+          <EventGridCard
+            event={event}
+            selectedId={selectedId}
+            onSelect={onEventSelect}
+          />
+        </SwiperSlide>
       ))}
-    </div>
+    </Swiper>
   )
 }

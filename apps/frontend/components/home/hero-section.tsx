@@ -31,12 +31,6 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
             type="video/mp4"
           />
         </video>
-
-        {/* Overlay Primario: Tono de marca + Oscuridad para legibilidad */}
-        <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
-
-        {/* Overlay de Gradiente: Limpia el área del texto y fusiona con el resto de la web */}
-        <div className="absolute inset-0 bg-linear-to-b from-black/60 via-transparent to-background" />
       </div>
 
       {/* 2. Capa de Contenido */}

@@ -119,7 +119,8 @@ export const llmEnrichmentPatchSchema = z.object({
   categorySecondary: z.string().optional(),
   tags: z.array(z.string()).optional(),
   locationNotes: z.string().optional(),
-  reviewNotes: z.string().optional(),
+  /** Null clears review notes (LLM sometimes emits JSON null). */
+  reviewNotes: z.union([z.string(), z.null()]).optional(),
   needsReview: z.boolean().optional(),
   audience: audienceZ.optional(),
   /** Only applied when the candidate has no dateText yet. */

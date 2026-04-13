@@ -69,7 +69,7 @@ const loosePatchSchema = z.object({
   categorySecondary: z.string().optional(),
   tags: z.array(z.string()).optional(),
   locationNotes: z.string().optional(),
-  reviewNotes: z.string().optional(),
+  reviewNotes: z.union([z.string(), z.null()]).optional(),
   needsReview: z.boolean().optional(),
   audience: z.string().optional(),
   dateText: z.string().optional(),

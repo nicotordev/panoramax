@@ -243,7 +243,7 @@ export default async function EventPage({ params }: EventPageProps) {
                           rel="noopener noreferrer"
                           className={cn(
                             buttonVariants({ variant: "outline", size: "lg" }),
-                            "flex w-full group items-center justify-center gap-2 rounded-xl text-base font-semibold border-border/50 hover:bg-muted/50 transition-colors"
+                            "flex w-full group items-center justify-center gap-2 rounded-xl text-base font-semibold"
                           )}
                         >
                           {t("officialLink")}
