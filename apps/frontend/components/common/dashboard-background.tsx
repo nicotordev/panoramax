@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
 import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 
 const images = [
   "/assets/img/party/pexels-patofuente-18984542.webp",
@@ -13,16 +14,25 @@ const images = [
   "/assets/img/party/pexels-patofuente-30911927.webp",
 ]
 
-export function DashboardBackground() {
+export interface RandomBackgroundProps {
+  className?: string
+  variant?: "light" | "dark"
+}
+
+export function RandomBackground({
+  className,
+  variant = "dark",
+}: RandomBackgroundProps) {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Un timeout de 0 o simplemente setMounted(true) está bien para el fix de hidratación
     const timer = setTimeout(() => setMounted(true), 0)
     return () => clearTimeout(timer)
   }, [])
 
-  // Use a simple hash of the pathname to pick one of the 5 images deterministically
+  // Hash simple para elegir la imagen de forma determinista según la ruta
   const getIndex = (path: string) => {
     let hash = 0
     for (let i = 0; i < path.length; i++) {
@@ -31,22 +41,34 @@ export function DashboardBackground() {
     return Math.abs(hash) % images.length
   }
 
-  // Strip locale prefix from pathname if present (e.g. /es/dashboard -> /dashboard)
-  // This ensures the same background image regardless of language
-  const normalizedPath = pathname ? pathname.replace(/^\/[^\/]+/, "") : ""
-  
+  // Elimina solo el prefijo de idioma de 2 letras (ej. /es, /en) para no afectar rutas raíz
+  const normalizedPath = pathname
+    ? pathname.replace(/^\/[a-zA-Z]{2}(?=\/|$)/, "")
+    : ""
+
   const imageSrc = images[getIndex(normalizedPath || "/dashboard")]
 
   if (!mounted) {
     return (
-      <div className="fixed inset-0 z-[-1] overflow-hidden bg-background">
+      <div
+        className={cn(
+          "pointer-events-none fixed inset-0 z-1 overflow-hidden bg-background",
+          className
+        )}
+      >
         <div className="absolute inset-0 bg-background/80" />
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-1 overflow-hidden bg-black">
+    // Se agregó pointer-events-none para garantizar que el fondo nunca bloquee los clics de la UI
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-0 z-1 overflow-hidden",
+        className
+      )}
+    >
       <AnimatePresence mode="popLayout">
         <motion.div
           key={imageSrc}
@@ -58,16 +80,31 @@ export function DashboardBackground() {
         >
           <Image
             src={imageSrc}
-            alt="Dashboard Background"
+            alt="" // Accesibilidad: se deja vacío para imágenes puramente decorativas
             fill
             className="object-cover"
             priority
           />
         </motion.div>
       </AnimatePresence>
-      {/* Overlay for contrast - matching glass theme */}
-      <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] transition-colors duration-500 dark:bg-black/60" />
-      <div className="absolute inset-0 bg-linear-to-tr from-background/80 via-transparent to-background/50 dark:from-black/80 dark:to-black/50" />
+
+      {/* Overlay de contraste limpio, sin duplicar las clases de color base */}
+      <div
+        className={cn(
+          "absolute inset-0 backdrop-blur-[2px] transition-colors duration-500",
+          variant === "light" ? "bg-white/20" : "bg-black/20"
+        )}
+      />
+
+      {/* Overlay de gradiente limpio */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-linear-to-tr",
+          variant === "light"
+            ? "from-white/60 to-white/50"
+            : "from-black/60 to-black/50"
+        )}
+      />
     </div>
   )
 }

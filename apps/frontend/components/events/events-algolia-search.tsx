@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Link } from "@/i18n/navigation"
-import { formatCategoryLabel } from "@/lib/home-showcase.utils"
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
 import { liteClient as algoliasearch } from "algoliasearch/lite"
@@ -45,6 +44,21 @@ const AUDIENCE_FACET_LABELS: Record<string, string> = {
   all_ages: "Todas las edades",
 }
 
+const CATEGORY_FACET_LABELS: Record<Event["categoryPrimary"], string> = {
+  music: "Música",
+  theatre: "Teatro",
+  standup: "Stand up",
+  dance: "Danza",
+  festival: "Festival",
+  fair: "Feria",
+  exhibition: "Exposición",
+  food_drink: "Gastronomía",
+  family: "Familiar",
+  sports: "Deportes",
+  workshop: "Taller",
+  special_experience: "Experiencia especial",
+}
+
 function formatAudienceFacetLabel(value: string): string {
   return AUDIENCE_FACET_LABELS[value] ?? value.replace(/_/g, " ")
 }
@@ -62,7 +76,7 @@ function formatRegionFacetLabel(value: string): string {
 }
 
 function formatCategoryFacetLabel(value: string): string {
-  return formatCategoryLabel(value as Event["categoryPrimary"])
+  return CATEGORY_FACET_LABELS[value as Event["categoryPrimary"]] ?? value
 }
 
 function CustomSearchBox() {
@@ -76,7 +90,7 @@ function CustomSearchBox() {
       <Input
         type="search"
         placeholder="Busca eventos, artistas o lugares..."
-        className="h-14 w-full rounded-2xl border-primary/20 bg-background/60 pl-12 text-lg shadow-sm backdrop-blur-md focus-visible:ring-primary/50"
+        className="h-14 w-full rounded-2xl border-white/20 bg-background/60 pl-12 text-lg shadow-xl backdrop-blur-xl transition-all focus-visible:border-primary/50 focus-visible:ring-primary/50 dark:border-white/10 dark:bg-black/40"
         value={query}
         onChange={(e) => refine(e.target.value)}
       />
@@ -132,14 +146,14 @@ function CustomRefinementList({
             <Checkbox
               checked={item.isRefined}
               onCheckedChange={() => refine(item.value)}
-              className="mt-0.5 border-muted-foreground/30 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+              className="mt-0.5 border-white/30 bg-background/50 data-[state=checked]:border-primary data-[state=checked]:bg-primary dark:border-white/20 dark:bg-black/40"
             />
-            <span className="flex-1 text-sm leading-tight font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+            <span className="flex-1 text-sm leading-tight font-medium text-foreground/80 transition-colors group-hover:text-foreground">
               {item.label}
             </span>
             <Badge
               variant="secondary"
-              className="mt-0.5 ml-auto bg-muted/50 px-1.5 py-0.5 text-[10px] leading-none font-normal"
+              className="mt-0.5 ml-auto border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] leading-none font-medium backdrop-blur-sm dark:bg-black/40"
             >
               {item.count}
             </Badge>
@@ -164,7 +178,7 @@ function CustomHits({ locale }: { locale: string }) {
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="h-[320px] animate-pulse rounded-2xl border border-border/50 bg-muted/40"
+            className="h-[320px] animate-pulse rounded-3xl border border-white/20 bg-background/50 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40"
           />
         ))}
       </div>
@@ -173,14 +187,14 @@ function CustomHits({ locale }: { locale: string }) {
 
   if (results.nbHits === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-background/50 px-4 py-20 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <FilterX className="h-8 w-8 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-white/20 bg-background/50 px-4 py-20 text-center shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-background/50 shadow-sm backdrop-blur-md dark:bg-black/40">
+          <FilterX className="h-8 w-8 text-muted-foreground/80" />
         </div>
-        <h3 className="mb-2 text-xl font-bold tracking-tight">
+        <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground">
           No se encontraron eventos
         </h3>
-        <p className="max-w-md text-muted-foreground">
+        <p className="max-w-md font-medium text-muted-foreground">
           No hay eventos que coincidan con tu búsqueda. Intenta ajustar los
           filtros o cambiar los términos de búsqueda.
         </p>
@@ -200,7 +214,8 @@ function CustomHits({ locale }: { locale: string }) {
 
         return (
           <Link key={hit.objectID} href={`/events/${slug}`}>
-            <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/50 bg-background/70 py-0 backdrop-blur-xl transition-all duration-300 hover:border-primary/40 hover:shadow-2xl">
+            <Card className="group relative flex h-full flex-col overflow-hidden rounded-3xl border-white/20 bg-background/60 py-0 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-2xl dark:border-white/10 dark:bg-black/40">
+              <div className="absolute inset-0 bg-linear-to-b from-transparent to-muted/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative aspect-4/3 overflow-hidden bg-muted">
                 <Image
                   src={imageUrl}
@@ -223,21 +238,21 @@ function CustomHits({ locale }: { locale: string }) {
                     className="border-none bg-background/30 text-xs text-white backdrop-blur-md hover:bg-background/40"
                   >
                     {eventHit.categoryPrimary
-                      ? formatCategoryLabel(eventHit.categoryPrimary)
+                      ? formatCategoryFacetLabel(eventHit.categoryPrimary)
                       : "General"}
                   </Badge>
                 </div>
               </div>
 
-              <CardContent className="relative flex flex-1 flex-col gap-3 p-5">
-                <h3 className="line-clamp-2 text-lg leading-tight font-bold transition-colors group-hover:text-primary">
+              <CardContent className="relative z-10 flex flex-1 flex-col gap-3 p-5">
+                <h3 className="line-clamp-2 text-lg font-bold leading-tight transition-colors group-hover:text-primary">
                   {title}
                 </h3>
 
                 <div className="mt-auto space-y-2.5 pt-2">
                   {eventHit.city && (
-                    <div className="flex items-start text-sm text-muted-foreground">
-                      <MapPin className="mt-0.5 mr-2.5 h-4 w-4 shrink-0 text-primary/70" />
+                    <div className="flex items-start text-sm font-medium text-foreground/80">
+                      <MapPin className="mt-0.5 mr-2.5 h-4 w-4 shrink-0 text-primary/80" />
                       <span className="line-clamp-1">
                         {eventHit.venueName ? `${eventHit.venueName}, ` : ""}
                         {eventHit.city}
@@ -246,8 +261,8 @@ function CustomHits({ locale }: { locale: string }) {
                   )}
 
                   {eventHit.startAt && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="mr-2.5 h-4 w-4 shrink-0 text-primary/70" />
+                    <div className="flex items-center text-sm font-medium text-foreground/80">
+                      <Calendar className="mr-2.5 h-4 w-4 shrink-0 text-primary/80" />
                       <span className="line-clamp-1">
                         {new Date(eventHit.startAt).toLocaleDateString(locale, {
                           weekday: "short",
@@ -282,7 +297,7 @@ function CustomPagination() {
         size="icon"
         onClick={() => refine(currentRefinement - 1)}
         disabled={isFirstPage}
-        className="h-10 w-10 rounded-full border-border/50 hover:bg-primary/5 hover:text-primary"
+        className="h-10 w-10 rounded-full border-white/20 bg-background/50 shadow-sm backdrop-blur-xl hover:bg-primary hover:text-primary-foreground dark:border-white/10 dark:bg-black/40"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -295,10 +310,10 @@ function CustomPagination() {
             size="sm"
             onClick={() => refine(page)}
             className={cn(
-              "h-10 min-w-10 rounded-full transition-all",
+              "h-10 min-w-10 rounded-full font-medium transition-all",
               currentRefinement === page
-                ? "shadow-md shadow-primary/20"
-                : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                ? "shadow-lg shadow-primary/25"
+                : "border border-transparent bg-background/30 text-foreground/80 hover:border-white/20 hover:bg-background/60 hover:text-foreground dark:bg-black/30 dark:hover:border-white/10 dark:hover:bg-black/50"
             )}
           >
             {page + 1}
@@ -311,7 +326,7 @@ function CustomPagination() {
         size="icon"
         onClick={() => refine(currentRefinement + 1)}
         disabled={isLastPage}
-        className="h-10 w-10 rounded-full border-border/50 hover:bg-primary/5 hover:text-primary"
+        className="h-10 w-10 rounded-full border-white/20 bg-background/50 shadow-sm backdrop-blur-xl hover:bg-primary hover:text-primary-foreground dark:border-white/10 dark:bg-black/40"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -351,9 +366,9 @@ export default function EventsAlgoliaSearch({
       <Configure hitsPerPage={12} />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-        <aside className="w-full shrink-0 lg:w-72">
-          <div className="sticky top-24 rounded-3xl border border-border/50 bg-card/30 p-6 shadow-sm backdrop-blur-2xl md:p-8">
-            <div className="mb-8 flex items-center gap-2 border-b border-border/50 pb-4 text-foreground">
+        <aside className="w-full shrink-0 lg:sticky lg:top-24 lg:w-72 lg:self-start">
+          <div className="rounded-3xl border border-white/20 bg-background/60 p-6 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40 md:p-8">
+            <div className="mb-8 flex items-center gap-2 border-b border-border/30 pb-4 text-foreground">
               <FilterX className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-bold">Filtros</h2>
             </div>
