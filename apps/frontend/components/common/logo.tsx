@@ -1,6 +1,6 @@
 import { Raleway } from "next/font/google"
+import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
 const ralewayHeading = Raleway({
   subsets: ["latin"],
   weight: "700",

@@ -33,14 +33,14 @@ export default async function RootLayout({
       lang={locale}
       suppressHydrationWarning
       className={cn(
-        "antialiased",
+        "h-full bg-background antialiased",
         fontMono.variable,
         "font-sans",
         publicSans.variable,
         ralewayHeading.variable
       )}
     >
-      <body>
+      <body className="h-full">
         <ClerkProvider localization={clerkLocalization}>
           <NextIntlClientProvider>
             <ThemeProvider>

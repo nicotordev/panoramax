@@ -177,5 +177,15 @@
   "Common": {
     "free": "免费",
     "paid": "付费"
+  },
+  "Auth": {
+    "signInTitle": "登录您的账户",
+    "signInSubtitle": "还没有账户？",
+    "signInLink": "创建账户",
+    "signUpTitle": "创建您的账户",
+    "signUpSubtitle": "已有账户？",
+    "signUpLink": "登录",
+    "signInHeroAlt": "音乐会现场观众与温暖的舞台灯光",
+    "signUpHeroAlt": "朋友们在活动之夜欢聚"
   }
 }

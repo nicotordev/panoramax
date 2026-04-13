@@ -177,5 +177,15 @@
   "Common": {
     "free": "Gratis",
     "paid": "De pago"
+  },
+  "Auth": {
+    "signInTitle": "Inicia sesión en tu cuenta",
+    "signInSubtitle": "¿Aún no tienes cuenta?",
+    "signInLink": "Crea una cuenta",
+    "signUpTitle": "Crea tu cuenta",
+    "signUpSubtitle": "¿Ya tienes cuenta?",
+    "signUpLink": "Inicia sesión",
+    "signInHeroAlt": "Público en un concierto con luces cálidas del escenario",
+    "signUpHeroAlt": "Amigos disfrutando una salida nocturna en un evento"
   }
 }

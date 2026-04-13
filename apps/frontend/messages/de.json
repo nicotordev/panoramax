@@ -170,5 +170,15 @@
   "Common": {
     "free": "Kostenlos",
     "paid": "Kostenpflichtig"
+  },
+  "Auth": {
+    "signInTitle": "Melden Sie sich bei Ihrem Konto an",
+    "signInSubtitle": "Noch kein Mitglied?",
+    "signInLink": "Konto erstellen",
+    "signUpTitle": "Erstellen Sie Ihr Konto",
+    "signUpSubtitle": "Bereits registriert?",
+    "signUpLink": "Anmelden",
+    "signInHeroAlt": "Publikum bei einem Konzert mit warmen Bühnenlichtern",
+    "signUpHeroAlt": "Freunde genießen einen Abend bei einer Veranstaltung"
   }
 }
