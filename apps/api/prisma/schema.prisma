@@ -34,7 +34,7 @@ enum Audience {
   all_ages
 }
 
-enum CategoryPrimary {
+enum CategoryType {
   music
   theatre
   standup
@@ -62,6 +62,80 @@ enum TranslationLocale {
 enum BlogPostStatus {
   draft
   published
+}
+
+enum OrganizationType {
+  organizer
+  ticketing
+  venue
+  brand
+  agency
+}
+
+enum CampaignObjective {
+  traffic
+  conversion
+  awareness
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  completed
+  archived
+}
+
+enum BillingModel {
+  cpm
+  cpc
+  cpa
+  flat_fee
+  revenue_share
+}
+
+enum AttributionModel {
+  last_click
+  first_click
+  linear
+}
+
+enum PromotionStatus {
+  active
+  paused
+  ended
+}
+
+enum TouchpointType {
+  impression
+  click
+  save
+  ticket_click
+}
+
+enum ConversionType {
+  lead
+  ticket_sale
+  subscription
+}
+
+enum ConversionStatus {
+  pending
+  validated
+  rejected
+}
+
+enum LedgerEntryType {
+  revenue
+  payout
+  refund
+  adjustment
+}
+
+enum LedgerEntryStatus {
+  pending
+  posted
+  voided
 }
 
 model Event {
@@ -113,12 +187,12 @@ model Event {
   tiers            EventTier[]
   translations     EventTranslation[]
 
-  categoryPrimary   CategoryPrimary @map("category_primary")
-  categorySecondary String?         @map("category_secondary")
-  categoriesSource  String[]        @default([]) @map("categories_source")
-  tags              String[]        @default([])
+  categoryPrimary   CategoryType @map("category_primary")
+  categorySecondary String?      @map("category_secondary")
+  categoriesSource  String[]     @default([]) @map("categories_source")
+  tags              String[]     @default([])
   audience          Audience?
-  editorialLabels   String[]        @default([]) @map("editorial_labels")
+  editorialLabels   String[]     @default([]) @map("editorial_labels")
 
   dedupeKey        String? @map("dedupe_key")
   canonicalEventId String? @map("canonical_event_id") @db.Uuid
@@ -129,8 +203,13 @@ model Event {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  canonicalEvent  Event?  @relation("CanonicalEvent", fields: [canonicalEventId], references: [id], onDelete: SetNull)
-  duplicateEvents Event[] @relation("CanonicalEvent")
+  canonicalEvent          Event?                   @relation("CanonicalEvent", fields: [canonicalEventId], references: [id], onDelete: SetNull)
+  duplicateEvents         Event[]                  @relation("CanonicalEvent")
+  userEventCategoryEvents UserEventCategoryEvent[]
+  eventPromotions         EventPromotion[]
+  attributionTouchpoints  AttributionTouchpoint[]
+  conversions             Conversion[]
+  ledgerEntries           LedgerEntry[]
 
   @@unique([source, sourceUrl], map: "events_source_source_url_key")
   @@unique([source, sourceEventId], map: "events_source_source_event_id_key")
@@ -239,10 +318,14 @@ model ApiKey {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  clerkId   String   @unique @map("clerk_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String                  @id @default(uuid()) @db.Uuid
+  clerkId                String                  @unique @map("clerk_id")
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  userPreferences        UserPreferences?
+  ownedOrganizations     Organization[]          @relation("OrganizationOwner")
+  attributionTouchpoints AttributionTouchpoint[]
+  conversions            Conversion[]
 
   @@index([clerkId], map: "users_clerk_id_idx")
   @@map("users")
@@ -294,4 +377,241 @@ model BlogPostTranslation {
   @@index([locale], map: "blog_post_translations_locale_idx")
   @@index([blogPostId], map: "blog_post_translations_blog_post_id_idx")
   @@map("blog_post_translations")
+}
+
+model UserEventCategory {
+  id                         String                   @id @default(uuid()) @db.Uuid
+  userId                     String                   @map("user_id") @db.Uuid
+  categoryName               String                   @map("category_name")
+  categoryType               CategoryType             @map("category_type")
+  createdAt                  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  userEventCategoryEvents    UserEventCategoryEvent[]
+  preferredByUserPreferences UserPreferences[]        @relation("PreferredUserEventCategories")
+  excludedByUserPreferences  UserPreferences[]        @relation("ExcludedUserEventCategories")
+
+  @@unique([userId, categoryName], map: "user_event_categories_user_id_category_name_key")
+  @@index([userId], map: "user_event_categories_user_id_idx")
+  @@map("user_event_categories")
+}
+
+model UserEventCategoryEvent {
+  id                  String            @id @default(uuid()) @db.Uuid
+  userEventCategoryId String            @map("user_event_category_id") @db.Uuid
+  userEventCategory   UserEventCategory @relation(fields: [userEventCategoryId], references: [id], onDelete: Cascade)
+  eventId             String            @map("event_id") @db.Uuid
+  event               Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userEventCategoryId], map: "user_event_category_events_user_event_category_id_idx")
+  @@index([eventId], map: "user_event_category_events_event_id_idx")
+  @@map("user_event_category_events")
+}
+
+model UserPreferences {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  preferredCategories          CategoryType[]      @default([])
+  preferredUserEventCategories UserEventCategory[] @relation("PreferredUserEventCategories")
+
+  // New fields for expanded preferences
+  preferredLanguages  String[] @default([])
+  preferredCities     String[] @default([])
+  preferredRegions    String[] @default([])
+  preferredPriceMin   Decimal? @db.Decimal(12, 2)
+  preferredPriceMax   Decimal? @db.Decimal(12, 2)
+  prefersFreeEvents   Boolean  @default(false)
+  prefersOnlineEvents Boolean  @default(false)
+
+  excludedCategories          CategoryType[]      @default([])
+  excludedCities              String[]            @default([])
+  excludedRegions             String[]            @default([])
+  excludedUserEventCategories UserEventCategory[] @relation("ExcludedUserEventCategories")
+
+  // Notification & alert preferences
+  receiveEmailNotifications Boolean @default(true)
+  receivePushNotifications  Boolean @default(false)
+  notificationFrequency     String? @default("daily") // e.g., 'instant', 'daily', 'weekly'
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId], map: "user_preferences_user_id_idx")
+  @@map("user_preferences")
+}
+
+model Organization {
+  id           String           @id @default(uuid()) @db.Uuid
+  name         String
+  slug         String           @unique
+  type         OrganizationType @default(organizer)
+  websiteUrl   String?          @map("website_url")
+  contactEmail String?          @map("contact_email")
+  billingEmail String?          @map("billing_email")
+  taxId        String?          @map("tax_id")
+  isActive     Boolean          @default(true) @map("is_active")
+  ownerUserId  String?          @map("owner_user_id") @db.Uuid
+  ownerUser    User?            @relation("OrganizationOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  campaigns     Campaign[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([ownerUserId], map: "organizations_owner_user_id_idx")
+  @@index([type, isActive], map: "organizations_type_is_active_idx")
+  @@map("organizations")
+}
+
+model Campaign {
+  id                    String            @id @default(uuid()) @db.Uuid
+  organizationId        String            @map("organization_id") @db.Uuid
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name                  String
+  slug                  String
+  objective             CampaignObjective @default(traffic)
+  status                CampaignStatus    @default(draft)
+  billingModel          BillingModel      @default(cpc) @map("billing_model")
+  budgetAmount          Decimal?          @map("budget_amount") @db.Decimal(12, 2)
+  budgetCurrency        String            @default("CLP") @map("budget_currency")
+  attributionModel      AttributionModel  @default(last_click) @map("attribution_model")
+  attributionWindowDays Int               @default(7) @map("attribution_window_days")
+  startAt               DateTime?         @map("start_at") @db.Timestamptz(6)
+  endAt                 DateTime?         @map("end_at") @db.Timestamptz(6)
+  targetCities          String[]          @default([]) @map("target_cities")
+  targetRegions         String[]          @default([]) @map("target_regions")
+  targetCategories      CategoryType[]    @default([]) @map("target_categories")
+  targetAudience        Audience[]        @default([]) @map("target_audience")
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  eventPromotions        EventPromotion[]
+  attributionTouchpoints AttributionTouchpoint[]
+  conversions            Conversion[]
+  ledgerEntries          LedgerEntry[]
+
+  @@unique([organizationId, slug], map: "campaigns_organization_id_slug_key")
+  @@index([organizationId], map: "campaigns_organization_id_idx")
+  @@index([status, startAt, endAt], map: "campaigns_status_start_at_end_at_idx")
+  @@map("campaigns")
+}
+
+model EventPromotion {
+  id          String          @id @default(uuid()) @db.Uuid
+  campaignId  String          @map("campaign_id") @db.Uuid
+  campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  eventId     String          @map("event_id") @db.Uuid
+  event       Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  status      PromotionStatus @default(active)
+  isSponsored Boolean         @default(true) @map("is_sponsored")
+  priority    Int             @default(0)
+  boostScore  Decimal?        @map("boost_score") @db.Decimal(6, 3)
+  ctaText     String?         @map("cta_text")
+  landingUrl  String?         @map("landing_url")
+  startsAt    DateTime?       @map("starts_at") @db.Timestamptz(6)
+  endsAt      DateTime?       @map("ends_at") @db.Timestamptz(6)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  attributionTouchpoints AttributionTouchpoint[]
+  conversions            Conversion[]
+
+  @@unique([campaignId, eventId], map: "event_promotions_campaign_id_event_id_key")
+  @@index([eventId, status], map: "event_promotions_event_id_status_idx")
+  @@index([campaignId, status], map: "event_promotions_campaign_id_status_idx")
+  @@map("event_promotions")
+}
+
+model AttributionTouchpoint {
+  id               String          @id @default(uuid()) @db.Uuid
+  campaignId       String          @map("campaign_id") @db.Uuid
+  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  eventId          String          @map("event_id") @db.Uuid
+  event            Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventPromotionId String?         @map("event_promotion_id") @db.Uuid
+  eventPromotion   EventPromotion? @relation(fields: [eventPromotionId], references: [id], onDelete: SetNull)
+  userId           String?         @map("user_id") @db.Uuid
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId        String?         @map("session_id")
+  touchpointType   TouchpointType  @map("touchpoint_type")
+  source           String?
+  medium           String?
+  referrerUrl      String?         @map("referrer_url")
+  metadata         Json?
+  occurredAt       DateTime        @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversions Conversion[]
+
+  @@index([campaignId, occurredAt], map: "attribution_touchpoints_campaign_id_occurred_at_idx")
+  @@index([eventId, occurredAt], map: "attribution_touchpoints_event_id_occurred_at_idx")
+  @@index([eventPromotionId], map: "attribution_touchpoints_event_promotion_id_idx")
+  @@index([userId, occurredAt], map: "attribution_touchpoints_user_id_occurred_at_idx")
+  @@index([touchpointType, occurredAt], map: "attribution_touchpoints_type_occurred_at_idx")
+  @@map("attribution_touchpoints")
+}
+
+model Conversion {
+  id                String                 @id @default(uuid()) @db.Uuid
+  campaignId        String                 @map("campaign_id") @db.Uuid
+  campaign          Campaign               @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  eventId           String                 @map("event_id") @db.Uuid
+  event             Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventPromotionId  String?                @map("event_promotion_id") @db.Uuid
+  eventPromotion    EventPromotion?        @relation(fields: [eventPromotionId], references: [id], onDelete: SetNull)
+  touchpointId      String?                @map("touchpoint_id") @db.Uuid
+  touchpoint        AttributionTouchpoint? @relation(fields: [touchpointId], references: [id], onDelete: SetNull)
+  userId            String?                @map("user_id") @db.Uuid
+  user              User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversionType    ConversionType         @default(ticket_sale) @map("conversion_type")
+  status            ConversionStatus       @default(pending)
+  externalReference String?                @map("external_reference")
+  currency          String                 @default("CLP")
+  grossAmount       Decimal?               @map("gross_amount") @db.Decimal(12, 2)
+  netAmount         Decimal?               @map("net_amount") @db.Decimal(12, 2)
+  commissionAmount  Decimal?               @map("commission_amount") @db.Decimal(12, 2)
+  occurredAt        DateTime               @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  validatedAt       DateTime?              @map("validated_at") @db.Timestamptz(6)
+  metadata          Json?
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([campaignId, status, occurredAt], map: "conversions_campaign_id_status_occurred_at_idx")
+  @@index([eventId, occurredAt], map: "conversions_event_id_occurred_at_idx")
+  @@index([touchpointId], map: "conversions_touchpoint_id_idx")
+  @@index([userId, occurredAt], map: "conversions_user_id_occurred_at_idx")
+  @@map("conversions")
+}
+
+model LedgerEntry {
+  id             String            @id @default(uuid()) @db.Uuid
+  organizationId String            @map("organization_id") @db.Uuid
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaignId     String?           @map("campaign_id") @db.Uuid
+  campaign       Campaign?         @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  eventId        String?           @map("event_id") @db.Uuid
+  event          Event?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  conversionId   String?           @map("conversion_id") @db.Uuid
+  conversion     Conversion?       @relation(fields: [conversionId], references: [id], onDelete: SetNull)
+  entryType      LedgerEntryType   @map("entry_type")
+  status         LedgerEntryStatus @default(posted)
+  currency       String            @default("CLP")
+  amount         Decimal           @db.Decimal(12, 2)
+  description    String?
+  metadata       Json?
+  occurredAt     DateTime          @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([organizationId, occurredAt], map: "ledger_entries_organization_id_occurred_at_idx")
+  @@index([campaignId, occurredAt], map: "ledger_entries_campaign_id_occurred_at_idx")
+  @@index([eventId, occurredAt], map: "ledger_entries_event_id_occurred_at_idx")
+  @@index([conversionId], map: "ledger_entries_conversion_id_idx")
+  @@index([entryType, status, occurredAt], map: "ledger_entries_type_status_occurred_at_idx")
+  @@map("ledger_entries")
 }
