@@ -49,10 +49,11 @@
       "browseEvents": "Ver eventos"
     },
     "cta": {
+      "badge": "Panoramax",
       "title": "Potenciá tu semana. Empezá a explorar con la app hoy.",
       "description": "Descubrí cultura curada en un solo lugar, de salas íntimas a grandes festivales, y pasá de la idea al plan más rápido.",
       "primaryCta": "Empezar",
-      "secondaryCta": "Saber más"
+      "secondaryCta": "Iniciá sesión"
     },
     "stats": {
       "events": "Eventos en la guía",

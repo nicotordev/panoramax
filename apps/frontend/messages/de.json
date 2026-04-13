@@ -49,10 +49,11 @@
       "browseEvents": "Events durchstöbern"
     },
     "cta": {
+      "badge": "Panoramax",
       "title": "Hol mehr aus deiner Woche. Leg heute mit der App los.",
       "description": "Entdecke kuratierte Kultur an einem Ort—von kleinen Venues bis zu großen Festivals—und verwandle Ideen schneller in Pläne.",
       "primaryCta": "Loslegen",
-      "secondaryCta": "Mehr erfahren"
+      "secondaryCta": "Anmelden"
     },
     "stats": {
       "events": "Events im Guide",

@@ -49,10 +49,11 @@
       "browseEvents": "浏览活动"
     },
     "cta": {
+      "badge": "Panoramax",
       "title": "让每一周更高效。今天就打开应用开始探索。",
       "description": "在一个地方发现精选文化内容——从小型场地到大型节庆——更快把想法变成出行计划。",
       "primaryCta": "开始使用",
-      "secondaryCta": "了解更多"
+      "secondaryCta": "登录"
     },
     "stats": {
       "events": "指南中的活动",

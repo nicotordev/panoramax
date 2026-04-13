@@ -93,11 +93,14 @@ export default async function Page({ params }: HomePageProps) {
       />
       <HomeCtaSection
         messages={{
+          badge: ctaT("badge"),
           title: ctaT("title"),
           description: ctaT("description"),
           primaryCta: ctaT("primaryCta"),
           secondaryCta: ctaT("secondaryCta"),
         }}
+        primaryHref="/auth/sign-up"
+        secondaryHref="/auth/sign-in"
       />
       <SiteFooter />
     </main>

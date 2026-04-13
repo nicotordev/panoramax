@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { HiArrowLongRight } from "react-icons/hi2"
 
 export type HomeCtaMessages = {
+  badge: string
   title: string
   description: string
   primaryCta: string
@@ -18,8 +19,8 @@ type HomeCtaSectionProps = {
 
 export default function HomeCtaSection({
   messages,
-  primaryHref = "/events",
-  secondaryHref = "/blog",
+  primaryHref = "/auth/sign-up",
+  secondaryHref = "/auth/sign-in",
 }: HomeCtaSectionProps) {
   return (
     <section
@@ -36,8 +37,7 @@ export default function HomeCtaSection({
         <div className="relative mx-auto max-w-2xl text-center">
           {/* Badge sutil superior */}
           <span className="mb-6 inline-block text-sm font-bold tracking-[0.2em] text-primary uppercase">
-            {messages.secondaryCta.split(" ")[0]}{" "}
-            {/* O una key de traducción nueva */}
+            {messages.badge}
           </span>
 
           <h2

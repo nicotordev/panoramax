@@ -181,7 +181,7 @@ export default function HeroEventsShowcase({
               {t("viewEvents")}
             </Link>
             <Link
-              href="/sign-up"
+              href="/auth/sign-up"
               className={cn(
                 buttonVariants({ variant: "secondary", size: "lg" }),
                 "rounded-full border border-white/20 bg-white/10 px-7 text-white hover:bg-white/20"

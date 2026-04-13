@@ -49,10 +49,11 @@
       "browseEvents": "Browse events"
     },
     "cta": {
+      "badge": "Panoramax",
       "title": "Boost your productivity. Start using our app today.",
       "description": "Discover curated culture in one place—from intimate venues to major festivals—and turn ideas into plans faster.",
       "primaryCta": "Get started",
-      "secondaryCta": "Learn more"
+      "secondaryCta": "Sign in"
     },
     "stats": {
       "events": "Events in the guide",

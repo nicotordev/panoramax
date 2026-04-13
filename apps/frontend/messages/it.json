@@ -49,10 +49,11 @@
       "browseEvents": "Sfoglia gli eventi"
     },
     "cta": {
+      "badge": "Panoramax",
       "title": "Dai una spinta alla tua settimana. Inizia a esplorare con l’app oggi.",
       "description": "Scopri cultura curata in un unico posto—da locali intimi a grandi festival—e passa dall’idea al piano più in fretta.",
       "primaryCta": "Inizia",
-      "secondaryCta": "Scopri di più"
+      "secondaryCta": "Accedi"
     },
     "stats": {
       "events": "Eventi nella guida",
