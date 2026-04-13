@@ -27,6 +27,9 @@ import {
 } from "react-icons/hi2"
 import { DotIndicators } from "./dot-indicators"
 import { EventStackCard } from "./event-stack-card"
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { MdCelebration, MdEditNote } from "react-icons/md"
 
 /**
  * Contenido principal del hero (copy + carrusel).
@@ -131,7 +134,7 @@ export default function HeroEventsShowcase({
             </span>
             <Link
               href="/events"
-              className="group flex items-center gap-1 text-sm font-medium text-foreground/90 transition-colors hover:text-foreground"
+              className="group flex items-center gap-1 text-sm font-medium text-background dark:text-foreground transition-colors hover:text-foreground"
             >
               {t("viewAll")}
               <HiArrowLongRight
@@ -161,6 +164,36 @@ export default function HeroEventsShowcase({
                 </p>
               </div>
             ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 pt-4">
+            <Link
+              href="/events"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "rounded-full px-7"
+              )}
+            >
+              <span className="mr-2 text-lg">
+                <i className="react-icons">
+                  <MdCelebration size={22} />
+                </i>
+              </span>
+              {t("viewEvents")}
+            </Link>
+            <Link
+              href="/sign-up"
+              className={cn(
+                buttonVariants({ variant: "secondary", size: "lg" }),
+                "rounded-full border border-white/20 bg-white/10 px-7 text-white hover:bg-white/20"
+              )}
+            >
+              <span className="mr-2 text-lg">
+                <i className="react-icons">
+                  <MdEditNote size={22} />
+                </i>
+              </span>
+              {t("createAccount")}
+            </Link>
           </div>
         </div>
 

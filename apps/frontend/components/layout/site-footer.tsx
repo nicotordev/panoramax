@@ -11,6 +11,7 @@ import { Link } from "@/i18n/navigation"
 import { getTranslations } from "next-intl/server"
 import { FooterNewsletterForm } from "./footer-newsletter-form"
 
+
 const linkClass =
   "text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 
@@ -70,7 +71,7 @@ export default async function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="mx-auto max-w-7xl px-6 pt-16 pb-8 sm:pt-20 lg:px-8 lg:pt-24">
-        <div className="xl:grid xl:grid-cols-3 xl:gap-10">
+        <div className="xl:grid xl:grid-cols-2 xl:gap-10">
           <div className="grid grid-cols-2 gap-8 xl:col-span-2">
             <div className="md:grid md:grid-cols-2 md:gap-8">
               <LinkColumn
@@ -100,14 +101,6 @@ export default async function SiteFooter() {
                 />
               </div>
             </div>
-          </div>
-
-          <div className="mt-12 xl:mt-0">
-            <h3 className={headingClass}>{t("newsletterTitle")}</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {t("newsletterDescription")}
-            </p>
-            <FooterNewsletterForm />
           </div>
         </div>
 

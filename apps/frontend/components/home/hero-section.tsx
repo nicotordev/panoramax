@@ -1,7 +1,7 @@
 import Search from "@/components/search"
-import type { Event, EventsListMeta } from "@/types/api"
 import { useTranslations } from "next-intl"
 import HeroEventsShowcase from "./hero-events-showcase"
+import type { Event, EventsListMeta } from "@/types/api"
 
 interface HeroSectionProps {
   events: Event[]
@@ -13,23 +13,19 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-background">
-      {/* 1. Fondo de Video con Doble Capa de Contraste */}
-      <div className="absolute inset-0 z-10">
+      {/* Video background with blending effects, layers reversed for visual interest */}
+      <div className="absolute inset-0 bg-black/60 mix-blend-darken z-10 pointer-events-none w-full h-full" />
+      <div className="absolute inset-0 z-0">
         <video
           autoPlay
-          muted
           loop
+          muted
           playsInline
-          className="h-full w-full scale-105 object-cover" // Escala ligera para evitar bordes blancos
+          className="h-full w-full object-cover scale-110 brightness-90 lg:brightness-100"
+          // slightly zoomed, subtle darkening for a bolder look
         >
-          <source
-            src="/assets/video/11999048_1920_1080_25fps.webm"
-            type="video/webm"
-          />
-          <source
-            src="/assets/video/11999048_1920_1080_25fps.mp4"
-            type="video/mp4"
-          />
+          <source src="/assets/video/11999048_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="/assets/video/11999048_1920_1080_25fps.webm" type="video/webm" />
         </video>
       </div>
 
