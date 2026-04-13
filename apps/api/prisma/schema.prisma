@@ -47,6 +47,8 @@ enum CategoryType {
   sports
   workshop
   special_experience
+
+  @@map("CategoryPrimary")
 }
 
 enum TranslationLocale {
