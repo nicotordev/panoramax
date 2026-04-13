@@ -24,6 +24,7 @@ import { useCallback, useMemo } from "react"
 import {
   Configure,
   useHits,
+  useInstantSearch,
   usePagination,
   useRefinementList,
   useSearchBox,
@@ -46,6 +47,18 @@ const AUDIENCE_FACET_LABELS: Record<string, string> = {
 
 function formatAudienceFacetLabel(value: string): string {
   return AUDIENCE_FACET_LABELS[value] ?? value.replace(/_/g, " ")
+}
+
+function formatCommuneFacetLabel(value: string): string {
+  return value === "Sin comuna informada" ? "Sin comuna informada" : value
+}
+
+function formatCityFacetLabel(value: string): string {
+  return value === "Sin ciudad informada" ? "Sin ciudad informada" : value
+}
+
+function formatRegionFacetLabel(value: string): string {
+  return value === "Sin región informada" ? "Sin región informada" : value
 }
 
 function formatCategoryFacetLabel(value: string): string {
@@ -139,8 +152,26 @@ function CustomRefinementList({
 
 function CustomHits({ locale }: { locale: string }) {
   const { items } = useHits<BaseHit>()
+  const { status, results } = useInstantSearch()
 
-  if (items.length === 0) {
+  const hasResolvedFirstSearch = typeof results?.nbHits === "number"
+  const isLoadingResults =
+    !hasResolvedFirstSearch || status === "loading" || status === "stalled"
+
+  if (isLoadingResults) {
+    return (
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-[320px] animate-pulse rounded-2xl border border-border/50 bg-muted/40"
+          />
+        ))}
+      </div>
+    )
+  }
+
+  if (results.nbHits === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-background/50 px-4 py-20 text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -327,7 +358,21 @@ export default function EventsAlgoliaSearch({
               <h2 className="text-xl font-bold">Filtros</h2>
             </div>
 
-            <CustomRefinementList attribute="city" title="Ciudad" />
+            <CustomRefinementList
+              attribute="commune"
+              title="Comuna"
+              transformLabel={formatCommuneFacetLabel}
+            />
+            <CustomRefinementList
+              attribute="city"
+              title="Ciudad"
+              transformLabel={formatCityFacetLabel}
+            />
+            <CustomRefinementList
+              attribute="region"
+              title="Región"
+              transformLabel={formatRegionFacetLabel}
+            />
             <CustomRefinementList
               attribute="categoryPrimary"
               title="Categoría"

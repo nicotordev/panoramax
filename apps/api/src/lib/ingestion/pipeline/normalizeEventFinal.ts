@@ -45,7 +45,9 @@ export function normalizeEventFinal(
 
   const inferred = inferLocation(candidate.address ?? candidate.venueName);
   const commune = candidate.commune ?? inferred.commune;
-  const city = candidate.city ?? inferred.city;
+  const city =
+    candidate.city ??
+    (commune !== "Sin comuna informada" ? "Santiago" : inferred.city);
   const region = candidate.region ?? inferred.region;
 
   const categoryPrimary =

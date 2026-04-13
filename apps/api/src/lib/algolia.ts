@@ -31,7 +31,13 @@ class Algolia {
       await this.client.setSettings({
         indexName: EVENTS_INDEX_NAME,
         indexSettings: {
-          attributesForFaceting: ["city", "categoryPrimary", "audience"],
+          attributesForFaceting: [
+            "commune",
+            "city",
+            "region",
+            "categoryPrimary",
+            "audience",
+          ],
         },
       });
       return true;

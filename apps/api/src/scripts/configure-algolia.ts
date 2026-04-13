@@ -28,7 +28,9 @@ async function main() {
     );
     process.exit(1);
   }
-  console.log("Listo: attributesForFaceting = city, categoryPrimary, audience");
+  console.log(
+    "Listo: attributesForFaceting = commune, city, region, categoryPrimary, audience",
+  );
 }
 
 main().catch((err) => {

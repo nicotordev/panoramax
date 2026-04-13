@@ -20,6 +20,7 @@
     "descriptions:backfill": "tsx src/scripts/backfill-descriptions-llm.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "algolia:configure": "tsx src/scripts/configure-algolia.ts",
+    "algolia:sync-events": "tsx src/scripts/sync-algolia-events.ts",
     "prisma:generate": "prisma generate",
     "prisma:db:pull": "prisma db pull",
     "prisma:migrate:dev": "prisma migrate dev",
