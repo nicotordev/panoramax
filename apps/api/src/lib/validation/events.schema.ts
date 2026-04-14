@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   Audience,
-  CategoryPrimary,
+  CategoryType,
   EventStatus,
   SourceType,
   TranslationLocale,
@@ -62,7 +62,7 @@ const eventCoreSchema = z.object({
   priceText: z.string().nullish(),
   availabilityText: z.string().nullish(),
   tiers: z.array(eventTierSchema).optional(),
-  categoryPrimary: z.nativeEnum(CategoryPrimary),
+  categoryPrimary: z.nativeEnum(CategoryType),
   categorySecondary: z.string().nullish(),
   categoriesSource: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
@@ -97,7 +97,7 @@ export const listEventsQuerySchema = z.object({
   region: z.string().optional(),
   source: z.string().optional(),
   status: z.nativeEnum(EventStatus).optional(),
-  categoryPrimary: z.nativeEnum(CategoryPrimary).optional(),
+  categoryPrimary: z.nativeEnum(CategoryType).optional(),
   locale: z.nativeEnum(TranslationLocale).optional(),
 });
 

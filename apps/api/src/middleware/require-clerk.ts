@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { getAuth } from "@hono/clerk-auth";
+import { getAuth } from "@clerk/hono";
 import userService from "../services/user.service.js";
 import type { User } from "../generated/prisma/client.js";
 

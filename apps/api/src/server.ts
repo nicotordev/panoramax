@@ -10,7 +10,7 @@ console.log(`🌎 Host: ${hostname}`);
 console.log(`🔌 Port: ${port}`);
 console.log(`📦 Node Environment: ${process.env.NODE_ENV ?? "development"}`);
 
-serve(
+const server = serve(
   {
     fetch: app.fetch,
     port,
@@ -22,3 +22,18 @@ serve(
     );
   },
 );
+
+function shutdown(signal: string) {
+  console.log(`\n${signal} received, closing server...`);
+  server.close((err) => {
+    if (err) {
+      console.error(err);
+    }
+    process.exit(err ? 1 : 0);
+  });
+  setTimeout(() => process.exit(0), 10_000).unref();
+}
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+

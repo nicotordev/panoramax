@@ -1,6 +1,6 @@
 import { load } from "cheerio";
 import {
-  CategoryPrimary,
+  CategoryType,
   SourceType,
 } from "../../../generated/prisma/enums.js";
 import { scrapeHtml } from "../../brightdata.js";
@@ -54,33 +54,33 @@ export class ChileCulturaIngestor {
     "13": "Región Metropolitana de Santiago",
   };
 
-  private static readonly categoryMap: Record<string, CategoryPrimary> = {
-    "artes visuales": CategoryPrimary.exhibition,
-    cine: CategoryPrimary.special_experience,
-    danza: CategoryPrimary.dance,
-    teatro: CategoryPrimary.theatre,
-    música: CategoryPrimary.music,
-    musica: CategoryPrimary.music,
-    literatura: CategoryPrimary.workshop,
-    bibliotecas: CategoryPrimary.workshop,
-    ópera: CategoryPrimary.theatre,
-    opera: CategoryPrimary.theatre,
-    gastronomía: CategoryPrimary.food_drink,
-    gastronomia: CategoryPrimary.food_drink,
-    "guía de ferias y festivales del libro": CategoryPrimary.fair,
-    "guia de ferias y festivales del libro": CategoryPrimary.fair,
-    "guía de librerías": CategoryPrimary.special_experience,
-    "guia de librerias": CategoryPrimary.special_experience,
-    patrimonio: CategoryPrimary.special_experience,
-    arquitectura: CategoryPrimary.special_experience,
-    museo: CategoryPrimary.exhibition,
-    museos: CategoryPrimary.exhibition,
-    "medio ambiente": CategoryPrimary.special_experience,
-    "pueblos originarios": CategoryPrimary.special_experience,
-    artesanía: CategoryPrimary.fair,
-    artesania: CategoryPrimary.fair,
-    diseño: CategoryPrimary.special_experience,
-    diseno: CategoryPrimary.special_experience,
+  private static readonly categoryMap: Record<string, CategoryType> = {
+    "artes visuales": CategoryType.exhibition,
+    cine: CategoryType.special_experience,
+    danza: CategoryType.dance,
+    teatro: CategoryType.theatre,
+    música: CategoryType.music,
+    musica: CategoryType.music,
+    literatura: CategoryType.workshop,
+    bibliotecas: CategoryType.workshop,
+    ópera: CategoryType.theatre,
+    opera: CategoryType.theatre,
+    gastronomía: CategoryType.food_drink,
+    gastronomia: CategoryType.food_drink,
+    "guía de ferias y festivales del libro": CategoryType.fair,
+    "guia de ferias y festivales del libro": CategoryType.fair,
+    "guía de librerías": CategoryType.special_experience,
+    "guia de librerias": CategoryType.special_experience,
+    patrimonio: CategoryType.special_experience,
+    arquitectura: CategoryType.special_experience,
+    museo: CategoryType.exhibition,
+    museos: CategoryType.exhibition,
+    "medio ambiente": CategoryType.special_experience,
+    "pueblos originarios": CategoryType.special_experience,
+    artesanía: CategoryType.fair,
+    artesania: CategoryType.fair,
+    diseño: CategoryType.special_experience,
+    diseno: CategoryType.special_experience,
   };
 
   private buildListingUrl(region: string | undefined, page: number) {
@@ -222,7 +222,7 @@ export class ChileCulturaIngestor {
   private mapCategory(categoryText: string) {
     return (
       ChileCulturaIngestor.categoryMap[categoryText.toLowerCase()] ??
-      CategoryPrimary.special_experience
+      CategoryType.special_experience
     );
   }
 

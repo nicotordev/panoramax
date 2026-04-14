@@ -4,7 +4,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { httpSecurity } from "./middleware/http-security.js";
 import v1Routes from "./routes/v1/index.routes.js";
 import responseEnhancer from "./utils/response-enhancer.js";
-import { clerkMiddleware } from "@hono/clerk-auth";
+import { clerkMiddleware } from "@clerk/hono";
 
 const app = new Hono<Env, Schema, "/">();
 

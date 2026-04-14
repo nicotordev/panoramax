@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   Audience,
-  CategoryPrimary,
+  CategoryType,
   SourceType,
 } from "../../../generated/prisma/enums.js";
 
@@ -13,18 +13,18 @@ const sourceTypeZ = z.enum([
 ]);
 
 const categoryPrimaryZ = z.enum([
-  CategoryPrimary.music,
-  CategoryPrimary.theatre,
-  CategoryPrimary.standup,
-  CategoryPrimary.dance,
-  CategoryPrimary.festival,
-  CategoryPrimary.fair,
-  CategoryPrimary.exhibition,
-  CategoryPrimary.food_drink,
-  CategoryPrimary.family,
-  CategoryPrimary.sports,
-  CategoryPrimary.workshop,
-  CategoryPrimary.special_experience,
+  CategoryType.music,
+  CategoryType.theatre,
+  CategoryType.standup,
+  CategoryType.dance,
+  CategoryType.festival,
+  CategoryType.fair,
+  CategoryType.exhibition,
+  CategoryType.food_drink,
+  CategoryType.family,
+  CategoryType.sports,
+  CategoryType.workshop,
+  CategoryType.special_experience,
 ]);
 
 const audienceZ = z.enum([

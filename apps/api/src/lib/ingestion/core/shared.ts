@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { load } from "cheerio";
 import {
   Audience,
-  CategoryPrimary,
+  CategoryType,
   SourceType,
 } from "../../../generated/prisma/enums.js";
 import { Prisma } from "../../../generated/prisma/client.js";
@@ -273,7 +273,7 @@ export const mapCategory = (value: string | null | undefined) => {
     haystack.includes("opera") ||
     haystack.includes("musical")
   ) {
-    return CategoryPrimary.theatre;
+    return CategoryType.theatre;
   }
 
   if (
@@ -286,46 +286,46 @@ export const mapCategory = (value: string | null | undefined) => {
     haystack.includes("salsa") ||
     haystack.includes("folklore")
   ) {
-    return CategoryPrimary.music;
+    return CategoryType.music;
   }
 
   if (haystack.includes("stand up") || haystack.includes("humor")) {
-    return CategoryPrimary.standup;
+    return CategoryType.standup;
   }
 
   if (haystack.includes("danza") || haystack.includes("ballet")) {
-    return CategoryPrimary.dance;
+    return CategoryType.dance;
   }
 
   if (haystack.includes("festival")) {
-    return CategoryPrimary.festival;
+    return CategoryType.festival;
   }
 
   if (haystack.includes("feria")) {
-    return CategoryPrimary.fair;
+    return CategoryType.fair;
   }
 
   if (haystack.includes("expo") || haystack.includes("visual")) {
-    return CategoryPrimary.exhibition;
+    return CategoryType.exhibition;
   }
 
   if (haystack.includes("famil") || haystack.includes("infantil")) {
-    return CategoryPrimary.family;
+    return CategoryType.family;
   }
 
   if (haystack.includes("futbol") || haystack.includes("deporte")) {
-    return CategoryPrimary.sports;
+    return CategoryType.sports;
   }
 
   if (haystack.includes("taller") || haystack.includes("laboratorio")) {
-    return CategoryPrimary.workshop;
+    return CategoryType.workshop;
   }
 
   if (haystack.includes("gastr")) {
-    return CategoryPrimary.food_drink;
+    return CategoryType.food_drink;
   }
 
-  return CategoryPrimary.special_experience;
+  return CategoryType.special_experience;
 };
 
 export const mapAudience = (value: string | null | undefined) => {
@@ -616,7 +616,7 @@ export const defaultEvent = ({
   priceMin?: number | null;
   priceMax?: number | null;
   tiers?: EventTierInput[];
-  categoryPrimary: CategoryPrimary;
+  categoryPrimary: CategoryType;
   categorySecondary?: string | null;
   categoriesSource?: string[];
   tags?: string[];
