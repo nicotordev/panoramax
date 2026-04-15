@@ -1,3 +1,5 @@
+"use client"
+
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { buttonVariants } from "@/data/variants.data"
@@ -5,6 +7,10 @@ import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { HiArrowUpRight, HiBookOpen, HiClock, HiUser } from "react-icons/hi2"
+import "swiper/css"
+import "swiper/css/free-mode"
+import { FreeMode, Mousewheel } from "swiper/modules"
+import { Swiper, SwiperSlide } from "swiper/react"
 
 // --- Types ---
 
@@ -38,8 +44,8 @@ type BlogSectionProps = {
 // --- Sub-components ---
 
 const EmptyState = ({ messages }: { messages: BlogSectionMessages }) => (
-  <Card className="border-border/60 bg-card/80 p-10 text-center shadow-sm backdrop-blur-sm">
-    <h3 className="font-heading text-lg font-semibold text-foreground flex items-center justify-center gap-2">
+  <Card className="border-border/60 bg-card/70 p-10 text-center shadow-sm backdrop-blur-md">
+    <h3 className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground">
       <HiBookOpen className="size-5 text-primary" />
       {messages.emptyTitle}
     </h3>
@@ -71,8 +77,9 @@ const PostCard = ({
   return (
     <Card
       className={cn(
-        "group relative flex flex-col overflow-hidden border-border/60 bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
-        isFeatured && "md:col-span-2 lg:flex-row"
+        "group relative flex flex-col overflow-hidden border-border/60 bg-card/90 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5",
+        isFeatured &&
+          "md:col-span-2 lg:flex-row lg:shadow-md lg:ring-1 lg:ring-primary/15"
       )}
     >
       {/* Image Section */}
@@ -155,10 +162,10 @@ const PostCard = ({
 
 export default function BlogSection({ messages, posts }: BlogSectionProps) {
   return (
-    <section className="py-16 lg:py-20">
+    <section className="bg-linear-to-b from-primary/[0.07] from-0% via-background via-28% to-background py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-12 flex flex-col gap-8 lg:mb-14 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <Badge
               variant="outline"
@@ -169,7 +176,7 @@ export default function BlogSection({ messages, posts }: BlogSectionProps) {
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               {messages.title}
             </h2>
-            <p className="mt-3 text-muted-foreground sm:text-lg">
+            <p className="mt-3 max-w-xl text-pretty text-muted-foreground sm:text-lg">
               {messages.description}
             </p>
           </div>
@@ -177,7 +184,7 @@ export default function BlogSection({ messages, posts }: BlogSectionProps) {
             href="/blog"
             className={cn(
               buttonVariants({ size: "lg", variant: "outline" }),
-              "rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
+              "shrink-0 rounded-full border-primary/20 bg-background/90 shadow-sm backdrop-blur-sm transition-colors hover:border-primary/35 hover:bg-primary/5"
             )}
           >
             {messages.viewAll}
@@ -189,16 +196,32 @@ export default function BlogSection({ messages, posts }: BlogSectionProps) {
         {posts.length === 0 ? (
           <EmptyState messages={messages} />
         ) : (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <Swiper
+            modules={[FreeMode, Mousewheel]}
+            slidesPerView="auto"
+            spaceBetween={24}
+            freeMode={{ enabled: true, momentum: true }}
+            mousewheel={{ forceToAxis: true }}
+            watchOverflow
+            className="w-full py-1"
+            wrapperClass="!items-stretch"
+          >
             {posts.map((post, index) => (
-              <PostCard
+              <SwiperSlide
                 key={post.id}
-                post={post}
-                isFeatured={index === 0}
-                readMoreText={messages.readArticle}
-              />
+                className={cn(
+                  "h-auto! w-[min(100%,22rem)]!",
+                  index === 0 && "w-[min(100%,30rem)]!"
+                )}
+              >
+                <PostCard
+                  post={post}
+                  isFeatured={index === 0}
+                  readMoreText={messages.readArticle}
+                />
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         )}
       </div>
     </section>

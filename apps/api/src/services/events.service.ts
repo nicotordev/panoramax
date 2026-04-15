@@ -158,8 +158,13 @@ class EventsService {
       status,
       categoryPrimary,
       locale,
+      sortBy,
     } = query;
     const skip = (page - 1) * limit;
+    const orderBy =
+      sortBy === "startAtAsc"
+        ? { startAt: "asc" as const }
+        : { startAt: "desc" as const };
 
     const where: Prisma.EventWhereInput = {
       ...(city !== undefined && city !== "" ? { city } : {}),
@@ -173,7 +178,7 @@ class EventsService {
     const [rows, total, freeTotal, distinctCommunes] = await Promise.all([
       prisma.event.findMany({
         where,
-        orderBy: { startAt: "desc" },
+        orderBy,
         skip,
         take: limit,
         include: {

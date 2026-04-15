@@ -214,6 +214,7 @@ class ServerClient {
   async getEvents(params?: {
     page?: number
     limit?: number
+    sortBy?: "startAtAsc" | "startAtDesc"
     status?: Event["status"]
     categoryPrimary?: Event["categoryPrimary"]
     commune?: string
@@ -232,6 +233,7 @@ class ServerClient {
         city,
         region,
         source,
+        sortBy,
         locale,
       } = params ?? {}
       const response = await this.axios.get<unknown>("/api/v1/events", {
@@ -244,6 +246,7 @@ class ServerClient {
           city,
           region,
           source,
+          sortBy,
           locale,
         },
       })

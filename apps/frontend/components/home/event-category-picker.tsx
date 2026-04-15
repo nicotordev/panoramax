@@ -26,6 +26,10 @@ import {
   MdTheaterComedy,
   MdWorkOutline,
 } from "react-icons/md"
+import "swiper/css"
+import "swiper/css/free-mode"
+import { FreeMode, Mousewheel } from "swiper/modules"
+import { Swiper, SwiperSlide } from "swiper/react"
 
 interface EventCategoryPickerProps {
   allEvents: Event[]
@@ -44,6 +48,22 @@ const CATEGORY_ICONS: Record<CategoryPrimaryEnum, ReactNode> = {
   [CategoryPrimaryEnum.sports]: <MdSportsSoccer />,
   [CategoryPrimaryEnum.workshop]: <MdWorkOutline />,
   [CategoryPrimaryEnum.special_experience]: <MdStar />,
+}
+
+const CATEGORY_IMAGE_SRC: Record<CategoryPrimaryEnum, string> = {
+  [CategoryPrimaryEnum.music]: "/assets/img/categories/music.webp",
+  [CategoryPrimaryEnum.theatre]: "/assets/img/categories/theatre.webp",
+  [CategoryPrimaryEnum.standup]: "/assets/img/categories/standup.webp",
+  [CategoryPrimaryEnum.dance]: "/assets/img/categories/dance.webp",
+  [CategoryPrimaryEnum.festival]: "/assets/img/categories/festival.webp",
+  [CategoryPrimaryEnum.fair]: "/assets/img/categories/fair.webp",
+  [CategoryPrimaryEnum.exhibition]: "/assets/img/categories/exhibition.webp",
+  [CategoryPrimaryEnum.food_drink]: "/assets/img/categories/food_drink.webp",
+  [CategoryPrimaryEnum.family]: "/assets/img/categories/family.webp",
+  [CategoryPrimaryEnum.sports]: "/assets/img/categories/sports.webp",
+  [CategoryPrimaryEnum.workshop]: "/assets/img/categories/workshop.webp",
+  [CategoryPrimaryEnum.special_experience]:
+    "/assets/img/categories/special_experience.webp",
 }
 
 const CATEGORY_LABELS: Record<CategoryPrimaryEnum, string> = {
@@ -84,10 +104,10 @@ export default function EventCategoryPicker({
     }))
   }, [allEvents])
 
-  const previewEvents = useMemo(() => allEvents.slice(0, 3), [allEvents])
+  const previewEvents = useMemo(() => allEvents.slice(0, 8), [allEvents])
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 lg:px-8 py-12">
+    <section className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
       <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -114,30 +134,60 @@ export default function EventCategoryPicker({
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <Swiper
+        modules={[FreeMode, Mousewheel]}
+        slidesPerView="auto"
+        spaceBetween={12}
+        freeMode={{ enabled: true, momentum: true }}
+        mousewheel={{ forceToAxis: true }}
+        watchOverflow
+        className="w-full py-1"
+        wrapperClass="!items-stretch"
+      >
         {categories.map((category) => (
-          <Link
-            key={category.key}
-            href={`/events?category=${category.key}`}
-            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-sm text-foreground shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/10"
-          >
-            <span className="text-base text-primary" aria-hidden>
-              {CATEGORY_ICONS[category.key]}
-            </span>
-            <span>{category.label}</span>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-              {category.count}
-            </span>
-          </Link>
+          <SwiperSlide key={category.key} className="h-auto! w-28! sm:w-32!">
+            <Link
+              href={`/events?category=${category.key}`}
+              className={cn(
+                "group relative flex h-full min-h-28 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border border-border/70 p-3 text-center text-foreground shadow-sm transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none sm:min-h-32",
+                "active:border-primary/70"
+              )}
+              aria-label={`${category.label} (${category.count})`}
+            >
+              <Image
+                src={CATEGORY_IMAGE_SRC[category.key]}
+                alt=""
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="128px"
+              />
+              <div
+                className="absolute inset-0 bg-linear-to-t from-background/95 via-background/55 to-background/25"
+                aria-hidden
+              />
+              <span
+                className="relative z-10 text-2xl text-primary drop-shadow-sm transition-transform group-hover:scale-110"
+                aria-hidden
+              >
+                {CATEGORY_ICONS[category.key]}
+              </span>
+              <span className="relative z-10 line-clamp-2 text-xs leading-tight font-medium drop-shadow-sm sm:text-sm">
+                {category.label}
+              </span>
+              <span className="relative z-10 mt-1 rounded-full bg-background/80 px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums backdrop-blur-sm">
+                {category.count}
+              </span>
+            </Link>
+          </SwiperSlide>
         ))}
-      </div>
+      </Swiper>
 
       {previewEvents.length > 0 ? (
-        <div className="mt-12 border-t border-border/60 pt-12">
+        <div className="pt-16">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {t("liveEvents")}
+                {t("events")}
               </p>
               <h3 className="mt-1 font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {t("previewPicksTitle")}
@@ -152,40 +202,51 @@ export default function EventCategoryPicker({
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Swiper
+            modules={[FreeMode, Mousewheel]}
+            slidesPerView="auto"
+            spaceBetween={16}
+            freeMode={{ enabled: true, momentum: true }}
+            mousewheel={{ forceToAxis: true }}
+            watchOverflow
+            className="w-full py-1"
+            wrapperClass="!items-stretch"
+          >
             {previewEvents.map((event) => {
               const title = getEventTitle(event)
               const href = `/events/${event.slug || event.id}`
 
               return (
-                <Card
+                <SwiperSlide
                   key={event.id}
-                  className="group overflow-hidden border-border/60 bg-card py-0 transition-shadow hover:shadow-md"
+                  className="h-auto! w-[min(100%,18rem)]! sm:w-80!"
                 >
-                  <Link href={href} className="block">
-                    <div className="relative aspect-16/10 w-full overflow-hidden bg-muted">
-                      <Image
-                        src={getEventCardImageSrc(event.imageUrl)}
-                        alt={title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <p className="line-clamp-2 leading-snug font-medium text-foreground">
-                        {title}
-                      </p>
-                      <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary">
-                        {t("viewDetails")}
-                        <HiArrowUpRight className="size-4" aria-hidden />
-                      </span>
-                    </div>
-                  </Link>
-                </Card>
+                  <Card className="group h-full overflow-hidden border-border/60 bg-card py-0 transition-shadow hover:shadow-md">
+                    <Link href={href} className="block h-full">
+                      <div className="relative aspect-16/10 w-full overflow-hidden bg-muted">
+                        <Image
+                          src={getEventCardImageSrc(event.imageUrl)}
+                          alt={title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <p className="line-clamp-2 leading-snug font-medium text-foreground">
+                          {title}
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                          {t("viewDetails")}
+                          <HiArrowUpRight className="size-4" aria-hidden />
+                        </span>
+                      </div>
+                    </Link>
+                  </Card>
+                </SwiperSlide>
               )
             })}
-          </div>
+          </Swiper>
         </div>
       ) : null}
     </section>

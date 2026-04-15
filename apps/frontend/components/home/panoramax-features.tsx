@@ -49,7 +49,7 @@ export default function PanoramaxFeatures({
   ] as const
 
   return (
-    <section className="border-b border-border/40 bg-primary py-16 text-foreground lg:py-20">
+    <section className="bg-primary py-16 text-foreground lg:py-20">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 lg:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">

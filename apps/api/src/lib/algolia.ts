@@ -1,6 +1,15 @@
 import { algoliasearch } from "algoliasearch";
 
 const EVENTS_INDEX_NAME = process.env.EVENTS_INDEX_NAME ?? "events_index";
+const EVENTS_INDEX_START_AT_ASC_REPLICA =
+  process.env.EVENTS_INDEX_START_AT_ASC_REPLICA ??
+  `${EVENTS_INDEX_NAME}_startAt_asc`;
+const EVENTS_INDEX_START_AT_DESC_REPLICA =
+  process.env.EVENTS_INDEX_START_AT_DESC_REPLICA ??
+  `${EVENTS_INDEX_NAME}_startAt_desc`;
+const EVENTS_INDEX_QUALITY_DESC_REPLICA =
+  process.env.EVENTS_INDEX_QUALITY_DESC_REPLICA ??
+  `${EVENTS_INDEX_NAME}_quality_desc`;
 
 function truncateText(value: unknown, maxLength: number) {
   if (typeof value !== "string") {
@@ -38,8 +47,36 @@ class Algolia {
             "categoryPrimary",
             "audience",
           ],
+          replicas: [
+            EVENTS_INDEX_START_AT_ASC_REPLICA,
+            EVENTS_INDEX_START_AT_DESC_REPLICA,
+            EVENTS_INDEX_QUALITY_DESC_REPLICA,
+          ],
+          customRanking: ["desc(qualityScore)", "asc(startAt)"],
         },
       });
+
+      await Promise.all([
+        this.client.setSettings({
+          indexName: EVENTS_INDEX_START_AT_ASC_REPLICA,
+          indexSettings: {
+            customRanking: ["asc(startAt)", "desc(qualityScore)"],
+          },
+        }),
+        this.client.setSettings({
+          indexName: EVENTS_INDEX_START_AT_DESC_REPLICA,
+          indexSettings: {
+            customRanking: ["desc(startAt)", "desc(qualityScore)"],
+          },
+        }),
+        this.client.setSettings({
+          indexName: EVENTS_INDEX_QUALITY_DESC_REPLICA,
+          indexSettings: {
+            customRanking: ["desc(qualityScore)", "asc(startAt)"],
+          },
+        }),
+      ]);
+
       return true;
     } catch (error) {
       console.warn(
@@ -163,3 +200,9 @@ class Algolia {
 const algolia = new Algolia();
 
 export default algolia;
+export {
+  EVENTS_INDEX_NAME,
+  EVENTS_INDEX_QUALITY_DESC_REPLICA,
+  EVENTS_INDEX_START_AT_ASC_REPLICA,
+  EVENTS_INDEX_START_AT_DESC_REPLICA,
+};

@@ -22,6 +22,7 @@ import Image from "next/image"
 import { useCallback, useMemo } from "react"
 import {
   Configure,
+  SortBy,
   useHits,
   useInstantSearch,
   usePagination,
@@ -35,6 +36,11 @@ export type EventsAlgoliaSearchProps = {
   appId: string
   apiKey: string
   indexName: string
+  sortIndices?: {
+    startAtAsc?: string
+    startAtDesc?: string
+    qualityDesc?: string
+  }
 }
 
 const AUDIENCE_FACET_LABELS: Record<string, string> = {
@@ -245,7 +251,7 @@ function CustomHits({ locale }: { locale: string }) {
               </div>
 
               <CardContent className="relative z-10 flex flex-1 flex-col gap-3 p-5">
-                <h3 className="line-clamp-2 text-lg font-bold leading-tight transition-colors group-hover:text-primary">
+                <h3 className="line-clamp-2 text-lg leading-tight font-bold transition-colors group-hover:text-primary">
                   {title}
                 </h3>
 
@@ -339,6 +345,7 @@ export default function EventsAlgoliaSearch({
   appId,
   apiKey,
   indexName,
+  sortIndices,
 }: EventsAlgoliaSearchProps) {
   const searchClient = useMemo(() => {
     if (!appId || !apiKey) return null
@@ -356,6 +363,22 @@ export default function EventsAlgoliaSearch({
     )
   }
 
+  const sortOptions = [
+    { label: "Relevancia", value: indexName },
+    {
+      label: "Fecha (próximos primero)",
+      value: sortIndices?.startAtAsc ?? `${indexName}_startAt_asc`,
+    },
+    {
+      label: "Fecha (más recientes primero)",
+      value: sortIndices?.startAtDesc ?? `${indexName}_startAt_desc`,
+    },
+    {
+      label: "Mejor calidad",
+      value: sortIndices?.qualityDesc ?? `${indexName}_quality_desc`,
+    },
+  ]
+
   return (
     <InstantSearchNext
       searchClient={searchClient}
@@ -367,7 +390,7 @@ export default function EventsAlgoliaSearch({
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         <aside className="w-full shrink-0 lg:sticky lg:top-24 lg:w-72 lg:self-start">
-          <div className="rounded-3xl border border-white/20 bg-background/60 p-6 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40 md:p-8">
+          <div className="rounded-3xl border border-white/20 bg-background/60 p-6 shadow-2xl backdrop-blur-xl md:p-8 dark:border-white/10 dark:bg-black/40">
             <div className="mb-8 flex items-center gap-2 border-b border-border/30 pb-4 text-foreground">
               <FilterX className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-bold">Filtros</h2>
@@ -403,6 +426,16 @@ export default function EventsAlgoliaSearch({
 
         <main className="flex min-w-0 flex-1 flex-col">
           <CustomSearchBox />
+          <div className="mb-4 flex justify-end">
+            <SortBy
+              items={sortOptions}
+              classNames={{
+                root: "w-full sm:w-auto",
+                select:
+                  "h-10 w-full min-w-64 rounded-xl border border-white/20 bg-background/60 px-3 text-sm shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-black/40",
+              }}
+            />
+          </div>
           <div className="flex-1">
             <CustomHits locale={locale} />
             <CustomPagination />

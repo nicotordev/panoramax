@@ -7,7 +7,11 @@
  * Uso: pnpm --dir apps/api run algolia:configure
  */
 import "dotenv/config";
-import algolia from "../lib/algolia.js";
+import algolia, {
+  EVENTS_INDEX_QUALITY_DESC_REPLICA,
+  EVENTS_INDEX_START_AT_ASC_REPLICA,
+  EVENTS_INDEX_START_AT_DESC_REPLICA,
+} from "../lib/algolia.js";
 
 const indexName = process.env.EVENTS_INDEX_NAME ?? "events_index";
 
@@ -30,6 +34,9 @@ async function main() {
   }
   console.log(
     "Listo: attributesForFaceting = commune, city, region, categoryPrimary, audience",
+  );
+  console.log(
+    `Replicas de sort configuradas: ${EVENTS_INDEX_START_AT_ASC_REPLICA}, ${EVENTS_INDEX_START_AT_DESC_REPLICA}, ${EVENTS_INDEX_QUALITY_DESC_REPLICA}`,
   );
 }
 

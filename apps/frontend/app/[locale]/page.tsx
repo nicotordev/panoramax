@@ -5,9 +5,10 @@ import HeroSection from "@/components/home/hero-section"
 import HomeCtaSection from "@/components/home/home-cta-section"
 import PanoramaxFeatures from "@/components/home/panoramax-features"
 import MainNav from "@/components/layout/main-nav"
-import SiteFooter from "@/components/layout/site-footer";
+import SiteFooter from "@/components/layout/site-footer"
 import { nextLocaleToApiLocale } from "@/lib/api-locale"
 import { createDateFormatter } from "@/lib/date-format"
+import { getFeaturedEventsFromAlgolia } from "@/lib/featured-events-algolia.server"
 import serverClient from "@/lib/server.client"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 
@@ -17,6 +18,7 @@ type HomePageProps = {
 
 export default async function Page({ params }: HomePageProps) {
   const { locale } = await params
+  const apiLocale = nextLocaleToApiLocale(locale)
   setRequestLocale(locale)
   const homeT = await getTranslations("HomePage")
   const featuresT = await getTranslations("HomePage.features")
@@ -27,22 +29,32 @@ export default async function Page({ params }: HomePageProps) {
     dateStyle: "medium",
   })
 
-  const [weeklyEventsResponse, heroResponse, randomEventsResponse, blogPosts] =
-    await Promise.all([
-      serverClient.getCurrentWeekEvents({
-        limit: 4,
-      }),
-      serverClient.getEvents({
-        limit: 5,
-      }),
-      serverClient.getEvents({
-        limit: 5,
-      }),
-      serverClient.getBlogPosts({
-        limit: 6,
-        locale: nextLocaleToApiLocale(locale),
-      }),
-    ])
+  const [
+    weeklyEventsResponse,
+    featuredEvents,
+    heroResponse,
+    randomEventsResponse,
+    blogPosts,
+  ] = await Promise.all([
+    serverClient.getCurrentWeekEvents({ limit: 8, locale: apiLocale }),
+    getFeaturedEventsFromAlgolia(apiLocale, 5),
+    serverClient.getEvents({
+      limit: 24,
+      sortBy: "startAtAsc",
+    }),
+    serverClient.getEvents({
+      limit: 5,
+    }),
+    serverClient.getBlogPosts({
+      limit: 6,
+      locale: apiLocale,
+    }),
+  ])
+
+  const featuredBentoEvents =
+    featuredEvents.length > 0
+      ? featuredEvents
+      : weeklyEventsResponse.data.slice(0, 5)
 
   const blogCards = blogPosts.data.map((post) => {
     const instant = post.publishedAt ?? post.updatedAt
@@ -63,7 +75,7 @@ export default async function Page({ params }: HomePageProps) {
       <MainNav />
       <HeroSection events={heroResponse.data} eventsMeta={heroResponse.meta} />
       <EventCategoryPicker allEvents={randomEventsResponse.data} />
-      <EventsBentoGrid events={weeklyEventsResponse.data} />
+      <EventsBentoGrid events={featuredBentoEvents} />
       <PanoramaxFeatures
         messages={{
           badge: featuresT("badge"),

@@ -92,6 +92,7 @@ export const eventUpdateBodySchema = eventCoreSchema
 export const listEventsQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
+  sortBy: z.enum(["startAtAsc", "startAtDesc"]).default("startAtDesc"),
   city: z.string().optional(),
   commune: z.string().optional(),
   region: z.string().optional(),
