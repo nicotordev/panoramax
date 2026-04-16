@@ -14,7 +14,6 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-background">
       {/* Video background with blending effects, layers reversed for visual interest */}
-      <div className="pointer-events-none absolute inset-0 z-10 h-full w-full bg-black/60 mix-blend-darken" />
       <div className="pointer-events-none absolute inset-0 z-10 h-full w-full bg-primary mix-blend-multiply" />
 
       <div className="absolute inset-0 z-0">

@@ -25,7 +25,7 @@ export default function HomeCtaSection({
   secondaryHref = "/auth/sign-in",
 }: HomeCtaSectionProps) {
   return (
-    <div className="relative flex items-stretch justify-center bg-primary">
+    <div className="relative flex items-stretch justify-center bg-primary h-[700px]">
       <div className="relative flex w-full">
         {/* Content (left) */}
         <div className="py-24 sm:py-32 lg:py-40 lg:px-8 relative z-10 flex flex-1 flex-col justify-center pr-0 pl-0 md:pr-6 md:pl-16 lg:pl-24 xl:pl-32">

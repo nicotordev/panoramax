@@ -69,7 +69,7 @@ export default function PanoramaxFeatures({
 
           <Link
             href="/events"
-            className={cn(buttonVariants({ size: "lg" }), "rounded-full px-6")}
+            className={cn(buttonVariants({ size: "lg", variant: "secondary"  }), "rounded-full px-6")}
           >
             {messages.viewEvents}
             <HiArrowUpRight className="size-4" />
