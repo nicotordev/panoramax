@@ -45,7 +45,7 @@ export default async function EventsPage({ params }: EventsPageProps) {
 
       <div className="relative z-10 container mx-auto mt-12 w-full max-w-7xl px-4 md:px-6">
         {/* MEJORA: Etiqueta <header> encapsulada en panel glassmórfico para máximo contraste con los fondos dinámicos */}
-        <header className="mb-14 max-w-3xl space-y-5 rounded-3xl border border-white/20 bg-background/60 p-8 shadow-2xl backdrop-blur-xl md:p-10 dark:border-white/10 dark:bg-black/40">
+        <header className="mb-14 space-y-5 rounded-3xl border border-white/20 bg-background/60 p-8 shadow-2xl backdrop-blur-xl md:p-10 dark:border-white/10 dark:bg-black/40">
           <Badge
             variant="outline"
             className="mb-2 border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary shadow-sm backdrop-blur-md"

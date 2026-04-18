@@ -10,6 +10,8 @@ const EVENTS_INDEX_START_AT_DESC_REPLICA =
 const EVENTS_INDEX_QUALITY_DESC_REPLICA =
   process.env.EVENTS_INDEX_QUALITY_DESC_REPLICA ??
   `${EVENTS_INDEX_NAME}_quality_desc`;
+const ALGOLIA_MAX_RECORD_BYTES = 10_000;
+const ALGOLIA_TARGET_RECORD_BYTES = 9_500;
 
 function truncateText(value: unknown, maxLength: number) {
   if (typeof value !== "string") {
@@ -17,6 +19,96 @@ function truncateText(value: unknown, maxLength: number) {
   }
 
   return value.length > maxLength ? value.slice(0, maxLength) : value;
+}
+
+function byteSize(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+function toTrimmedStringArray(
+  value: unknown,
+  maxItems: number,
+  maxLength: number,
+): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => truncateText(item.trim(), maxLength))
+    .filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    )
+    .slice(0, maxItems);
+}
+
+function fitRecordSize<T extends Record<string, unknown>>(record: T): T {
+  if (byteSize(record) <= ALGOLIA_TARGET_RECORD_BYTES) {
+    return record;
+  }
+
+  const compacted = { ...record } as Record<string, unknown>;
+  const optionalFieldDropOrder = [
+    "tiers",
+    "translations",
+    "tags",
+    "editorialLabels",
+    "categoriesSource",
+    "imageAttribution",
+    "locationNotes",
+    "availabilityText",
+    "priceText",
+    "address",
+    "subtitle",
+    "summary",
+    "sourceUrl",
+    "ticketUrl",
+  ];
+
+  for (const field of optionalFieldDropOrder) {
+    if (field in compacted) {
+      delete compacted[field];
+      if (byteSize(compacted) <= ALGOLIA_TARGET_RECORD_BYTES) {
+        return compacted as T;
+      }
+    }
+  }
+
+  compacted.title = truncateText(compacted.title, 120);
+  compacted.venueName = truncateText(compacted.venueName, 120);
+  compacted.dateText = truncateText(compacted.dateText, 120);
+
+  if (byteSize(compacted) <= ALGOLIA_TARGET_RECORD_BYTES) {
+    return compacted as T;
+  }
+
+  const minimalRecord = {
+    objectID: String(compacted.objectID ?? compacted.id ?? ""),
+    id: compacted.id,
+    slug: compacted.slug,
+    title: truncateText(compacted.title, 100),
+    imageUrl: compacted.imageUrl,
+    startAt: compacted.startAt,
+    endAt: compacted.endAt,
+    status: compacted.status,
+    venueName: truncateText(compacted.venueName, 100),
+    city: compacted.city,
+    commune: compacted.commune,
+    region: compacted.region,
+    isFree: compacted.isFree,
+    categoryPrimary: compacted.categoryPrimary,
+    audience: compacted.audience,
+    qualityScore: compacted.qualityScore,
+  } as unknown as T;
+
+  if (byteSize(minimalRecord) > ALGOLIA_MAX_RECORD_BYTES) {
+    console.warn(
+      `[Algolia] Record ${minimalRecord.objectID} is still too large after compaction (${byteSize(minimalRecord)} bytes).`,
+    );
+  }
+
+  return minimalRecord;
 }
 
 class Algolia {
@@ -97,52 +189,23 @@ class Algolia {
       objects: events.map((event) => {
         const source = event as Record<string, unknown>;
         const translations = Array.isArray(source.translations)
-          ? source.translations.map((translation) => {
+          ? source.translations.slice(0, 5).map((translation) => {
               const item = translation as Record<string, unknown>;
               return {
                 locale: item.locale,
                 title: truncateText(item.title, 160),
-                subtitle: truncateText(item.subtitle, 220),
-                summary: truncateText(item.summary, 400),
+                subtitle: truncateText(item.subtitle, 180),
+                summary: truncateText(item.summary, 280),
                 dateText: truncateText(item.dateText, 180),
                 venueName: truncateText(item.venueName, 180),
-                locationNotes: truncateText(item.locationNotes, 240),
-                priceText: truncateText(item.priceText, 180),
-                availabilityText: truncateText(item.availabilityText, 180),
+                locationNotes: truncateText(item.locationNotes, 160),
+                priceText: truncateText(item.priceText, 120),
+                availabilityText: truncateText(item.availabilityText, 120),
               };
             })
           : [];
 
-        const tiers = Array.isArray(source.tiers)
-          ? source.tiers.map((tier) => {
-              const item = tier as Record<string, unknown>;
-              const tierTranslations = Array.isArray(item.translations)
-                ? item.translations.map((translation) => {
-                    const translationItem = translation as Record<
-                      string,
-                      unknown
-                    >;
-                    return {
-                      locale: translationItem.locale,
-                      name: truncateText(translationItem.name, 160),
-                    };
-                  })
-                : [];
-
-              return {
-                id: item.id,
-                name: truncateText(item.name, 160),
-                price: item.price,
-                fee: item.fee,
-                totalPrice: item.totalPrice,
-                currency: item.currency,
-                sortOrder: item.sortOrder,
-                translations: tierTranslations,
-              };
-            })
-          : [];
-
-        return {
+        const record = {
           id: source.id,
           source: source.source,
           sourceType: source.sourceType,
@@ -181,17 +244,22 @@ class Algolia {
           priceText: truncateText(source.priceText, 180),
           availabilityText: truncateText(source.availabilityText, 180),
           categoryPrimary: source.categoryPrimary,
-          categorySecondary: source.categorySecondary,
-          categoriesSource: source.categoriesSource,
-          tags: source.tags,
+          categorySecondary: truncateText(source.categorySecondary, 120),
+          categoriesSource: toTrimmedStringArray(
+            source.categoriesSource,
+            8,
+            80,
+          ),
+          tags: toTrimmedStringArray(source.tags, 20, 80),
           audience: source.audience,
-          editorialLabels: source.editorialLabels,
+          editorialLabels: toTrimmedStringArray(source.editorialLabels, 12, 80),
           qualityScore: source.qualityScore,
           needsReview: source.needsReview,
           translations,
-          tiers,
           objectID: String(event.id),
         };
+
+        return fitRecordSize(record);
       }),
     });
   }
