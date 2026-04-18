@@ -1,6 +1,6 @@
 import { load } from "cheerio";
 import { SourceType } from "../../../generated/prisma/enums.js";
-import { scrapeHtml } from "../../brightdata.js";
+import { defaultBrightDataFetchHtml } from "../core/defaultFetchHtml.js";
 import {
   absoluteUrl,
   extractBodyText,
@@ -11,11 +11,10 @@ import {
   normalizeVenueName,
   parseSpanishDateRange,
   slugFromUrl,
-  upsertEvent,
   type IngestSourceOptions,
   type IngestionError,
   type IngestionResult,
-} from "../core/shared.js";
+} from "../core/shared-pure.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
 
@@ -69,14 +68,16 @@ export const ingestAgendaMusical = async ({
   limit,
   persist = false,
   enrichWithLlm,
+  fetchHtml: fetchHtmlOpt,
 }: IngestSourceOptions = {}) => {
+  const fetchHtml = fetchHtmlOpt ?? defaultBrightDataFetchHtml;
   const baseUrl = "https://www.agendamusical.cl";
   const listingUrl =
     page > 1
       ? absoluteUrl(baseUrl, `/page/${page}/`)
       : absoluteUrl(baseUrl, "/");
   const errors: IngestionError[] = [];
-  const listingHtml = await scrapeHtml(listingUrl);
+  const listingHtml = await fetchHtml(listingUrl);
   const $ = load(listingHtml);
   const cards = $("article")
     .toArray()
@@ -108,7 +109,7 @@ export const ingestAgendaMusical = async ({
 
   for (const item of cards) {
     try {
-      const detailHtml = await scrapeHtml(item.sourceUrl);
+      const detailHtml = await fetchHtml(item.sourceUrl);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
       const blogPosting = parseAgendaMusicalBlogPosting($$);
@@ -219,6 +220,7 @@ export const ingestAgendaMusical = async ({
   }
 
   if (persist) {
+    const { upsertEvent } = await import("../core/shared-db.js");
     for (const event of events) {
       try {
         await upsertEvent(event);

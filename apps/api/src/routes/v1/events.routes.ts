@@ -30,6 +30,14 @@ eventsRoutes.post(
   eventsController.create,
 );
 
+eventsRoutes.post(
+  "/upsert",
+  requireApiKey([...apiAccess.eventsWrite]),
+  zValidator("query", eventLocaleQuerySchema, zodValidationHook),
+  zValidator("json", eventCreateBodySchema, zodValidationHook),
+  eventsController.upsert,
+);
+
 eventsRoutes.get(
   "/current-week",
   zValidator("query", listEventsQuerySchema, zodValidationHook),

@@ -133,6 +133,23 @@ Aunque este documento asume **sin proxies**, conviene ser explícito:
 - [ ] ¿Caché local / condicionales para no repetir trabajo?
 - [ ] ¿Logs suficientes para saber si me están limitando?
 
+## 10. Checklist por dominio — ola 1 del MVP
+
+Alineado al orden de integración en [`strategy/03-data-sources.md`](./strategy/03-data-sources.md). Los rangos son **arranque conservador** para una sola IP; ajústalos con `robots.txt`, respuestas **429** / **`Retry-After`** y el tamaño real de cada corrida.
+
+| Orden | Fuente | Host | Punto de partida | Ritmo sugerido (arranque) | Notas |
+|------:|--------|------|------------------|---------------------------|--------|
+| 1 | Chile Cultura | `chilecultura.gob.cl` | [`/events/search/`](https://chilecultura.gob.cl/events/search/) | 1 req cada 3–5 s al host; 1 pestaña lógica | Buscador + fichas; evita abrir cientos de detalles el mismo día que pruebas filtros nuevos. |
+| 2 | GAM | `gam.cl` | [`/es/calendario/`](https://gam.cl/es/calendario/) | 1 req cada 2–4 s | Pocas páginas índice (calendario mensual), luego detalle por evento; buen candidato a **JSON-LD** si está en ficha. |
+| 3 | Ticketplus | `ticketplus.cl` | [`/states/region-metropolitana`](https://ticketplus.cl/states/region-metropolitana) | 1 req cada 3–5 s | Navega por capas (región → ciudad → categoría) en serie; no dispares en paralelo decenas de listados del mismo host. |
+| 4 | PuntoTicket | `puntoticket.com` | [`/todos`](https://www.puntoticket.com/todos) | 1 req cada 4–6 s; preferir corridas incrementales | Catálogo grande: ventanas por fecha o por categoría suelen ser más seguras que un “full crawl” diario desde casa. |
+| 5 | Teatro Municipal | `municipal.cl` | [`/espectaculos/`](https://municipal.cl/espectaculos/) | 1 req cada 3–5 s | Programación por categorías; vigila saltos a dominios de venta (no arrastres la misma agresividad al CDN de la ticketera). |
+| 6 | Agenda Musical | `agendamusical.cl` | [`/lista-conciertos/`](https://www.agendamusical.cl/lista-conciertos/) | 1 req cada 2–4 s | Listados por mes / venue; útil para música en vivo; mismo cuidado con paginación y filtros. |
+
+**Segunda ola** (Passline, Fever, Ticketmaster, recintos puntuales): vuelve a leer `robots.txt` y ToS por host antes de automatizar; varios sitios mezclan **marketing**, **embeds** y **APIs de terceros**, lo que sube la fragilidad sin subir el valor del MVP.
+
+Para experimentación local respetando estas pautas, el monorepo expone el paquete `apps/scraping-local` (Node/TypeScript). Al añadir lógica de fetch allí, mantén **User-Agent identificable**, cola por host y logs por corrida como describe la sección 6.
+
 ---
 
 ## Referencias y lectura adicional

@@ -1,18 +1,17 @@
 import { load } from "cheerio";
 import { CategoryType, SourceType } from "../../../generated/prisma/enums.js";
-import { scrapeHtml } from "../../brightdata.js";
 import type { EventCreateInput } from "../../validation/events.schema.js";
+import { defaultBrightDataFetchHtml } from "../core/defaultFetchHtml.js";
 import type {
   IngestSourceOptions,
   IngestionError,
   IngestionResult,
-} from "../core/shared.js";
+} from "../core/shared-pure.js";
 import {
   extractImageUrl,
   inferLocation,
   isPastEvent,
-  upsertEvent,
-} from "../core/shared.js";
+} from "../core/shared-pure.js";
 import { parseChileCulturaStartAt } from "../pipeline/chileDate.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
@@ -365,16 +364,18 @@ export class ChileCulturaIngestor {
     limit,
     persist = false,
     enrichWithLlm,
+    fetchHtml: fetchHtmlOpt,
   }: IngestChileCulturaOptions = {}) {
+    const fetchHtml = fetchHtmlOpt ?? defaultBrightDataFetchHtml;
     const listingUrl = this.buildListingUrl(region, page);
-    const listingHtml = await scrapeHtml(listingUrl);
+    const listingHtml = await fetchHtml(listingUrl);
     const listingItems = this.parseListingPage(listingHtml);
     const errors: IngestionError[] = [];
 
     const detailPages = await Promise.all(
       (region ? listingItems : listingItems.slice(0, limit)).map(
         async (item) => {
-          const detailHtml = await scrapeHtml(item.sourceUrl);
+          const detailHtml = await fetchHtml(item.sourceUrl);
 
           return {
             listingItem: item,
@@ -415,6 +416,7 @@ export class ChileCulturaIngestor {
     }
 
     if (persist) {
+      const { upsertEvent } = await import("../core/shared-db.js");
       await Promise.all(normalizedEvents.map((event) => upsertEvent(event)));
     }
 

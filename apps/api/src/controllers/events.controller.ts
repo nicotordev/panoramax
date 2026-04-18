@@ -84,6 +84,22 @@ class EventsController {
     }
   };
 
+  public upsert = async (c: Context) => {
+    try {
+      const { locale } = validQuery<EventLocaleQuery>(c);
+      const json = validJson<EventCreateInput>(c);
+      const event = await eventsService.upsert(json, locale);
+      const body = responseEnhancer.ok(event, "Event upserted successfully");
+      return c.json(body, body.status as ContentfulStatusCode);
+    } catch (error) {
+      const body = responseEnhancer.errorHandler(
+        error,
+        "Failed to upsert event",
+      );
+      return c.json(body, body.status as ContentfulStatusCode);
+    }
+  };
+
   public update = async (c: Context) => {
     try {
       const { locale } = validQuery<EventLocaleQuery>(c);

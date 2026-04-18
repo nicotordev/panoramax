@@ -1,6 +1,6 @@
 import { load } from "cheerio";
 import { SourceType } from "../../../generated/prisma/enums.js";
-import { scrapeHtml } from "../../brightdata.js";
+import { defaultBrightDataFetchHtml } from "../core/defaultFetchHtml.js";
 import {
   absoluteUrl,
   extractBodyText,
@@ -13,11 +13,10 @@ import {
   parsePriceRange,
   parseSpanishDateRange,
   slugFromUrl,
-  upsertEvent,
   type IngestSourceOptions,
   type IngestionError,
   type IngestionResult,
-} from "../core/shared.js";
+} from "../core/shared-pure.js";
 import { ticketingSnippetLooksPolluted } from "../pipeline/descriptionPollution.js";
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import { scrapeDetailHtmlAndOptionalMarkdown } from "../pipeline/scrapeDetailForIngest.js";
@@ -93,11 +92,13 @@ export const ingestTicketplus = async ({
   limit,
   persist = false,
   enrichWithLlm,
+  fetchHtml: fetchHtmlOpt,
 }: IngestSourceOptions = {}) => {
+  const fetchHtml = fetchHtmlOpt ?? defaultBrightDataFetchHtml;
   const baseUrl = "https://ticketplus.cl";
   const listingUrl = absoluteUrl(baseUrl, "/states/region-metropolitana");
   const errors: IngestionError[] = [];
-  const listingHtml = await scrapeHtml(listingUrl);
+  const listingHtml = await fetchHtml(listingUrl);
   const $ = load(listingHtml);
   const requestedLimit = limit ?? 20;
   const listingLinks = [
@@ -119,7 +120,11 @@ export const ingestTicketplus = async ({
   for (const sourceUrl of candidateLinks) {
     try {
       const { html: detailHtml, markdown: pageMarkdown } =
-        await scrapeDetailHtmlAndOptionalMarkdown(sourceUrl, enrichWithLlm);
+        await scrapeDetailHtmlAndOptionalMarkdown(
+          sourceUrl,
+          enrichWithLlm,
+          fetchHtml,
+        );
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
       const jsonLdEvent = parseTicketplusJsonLdEvent($$);
@@ -335,6 +340,7 @@ export const ingestTicketplus = async ({
   }
 
   if (persist) {
+    const { upsertEvent } = await import("../core/shared-db.js");
     for (const event of events) {
       try {
         await upsertEvent(event);

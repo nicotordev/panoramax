@@ -2,6 +2,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { TranslationLocale } from "../generated/prisma/enums.js";
 import type { EventModel } from "../generated/prisma/models/Event.js";
 import { serializeEvent } from "../lib/events/serialize-event.js";
+import { upsertEvent } from "../lib/ingestion/core/shared-db.js";
 import { buildEventSlug } from "../lib/ingestion/core/shared.js";
 import { toPrismaJsonInput } from "../lib/prisma-json.js";
 import { prisma } from "../lib/prisma.js";
@@ -392,6 +393,36 @@ class EventsService {
           },
         },
       });
+    });
+    return applyLocaleTranslations(row, locale);
+  }
+
+  /**
+   * Idempotent create/update by `(source, sourceUrl)` — same semantics as ingest `upsertEvent`,
+   * including image mirroring and tier replacement.
+   */
+  public async upsert(data: EventCreateInput, locale?: TranslationLocale) {
+    await upsertEvent(data);
+    const row = await prisma.event.findUniqueOrThrow({
+      where: {
+        source_sourceUrl: {
+          source: data.source,
+          sourceUrl: data.sourceUrl,
+        },
+      },
+      include: {
+        translations: locale
+          ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+          : true,
+        tiers: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            translations: locale
+              ? { where: { locale }, take: 1, orderBy: { updatedAt: "desc" } }
+              : true,
+          },
+        },
+      },
     });
     return applyLocaleTranslations(row, locale);
   }

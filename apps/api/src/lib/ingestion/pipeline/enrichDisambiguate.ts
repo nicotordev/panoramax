@@ -1,7 +1,7 @@
 import OpenAI, { APIError } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import { mapCategory } from "../core/shared.js";
+import { mapCategory } from "../core/shared-pure.js";
 import type {
   EventCandidate,
   LlmEnrichmentPatch,

@@ -5,7 +5,7 @@ import {
   mapAudience,
   mapCategory,
   parseSpanishDateRange,
-} from "../core/shared.js";
+} from "../core/shared-pure.js";
 import type { EventCandidate } from "./types.js";
 import { CANDIDATE_VERSION } from "./types.js";
 
