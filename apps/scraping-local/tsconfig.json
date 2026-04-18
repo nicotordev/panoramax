@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.node.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "outDir": "./dist",
+    "rootDir": "."
+  },
+  "include": ["prisma.config.ts", "src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}
