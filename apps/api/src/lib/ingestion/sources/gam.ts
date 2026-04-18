@@ -23,6 +23,63 @@ type GamListingItem = {
   sourceUrl: string;
 };
 
+type GamJsonLdEvent = {
+  ["@type"]?: string;
+  name?: string;
+  description?: string;
+  genre?: string;
+  image?: string[] | string;
+  startDate?: string;
+  endDate?: string;
+  location?: {
+    name?: string;
+    address?: {
+      streetAddress?: string;
+      addressLocality?: string;
+      addressRegion?: string;
+      addressCountry?: string;
+    };
+  };
+};
+
+function stripHtmlTags(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+  return (
+    value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || null
+  );
+}
+
+function parseGamJsonLdEvent($$: ReturnType<typeof load>) {
+  const scripts = $$('script[type="application/ld+json"]')
+    .toArray()
+    .map((node) => $$(node).html()?.trim())
+    .filter((raw): raw is string => Boolean(raw));
+
+  for (const raw of scripts) {
+    try {
+      const parsed = JSON.parse(raw) as GamJsonLdEvent | GamJsonLdEvent[];
+      const event =
+        (Array.isArray(parsed)
+          ? parsed.find((item) => item?.["@type"] === "Event")
+          : parsed?.["@type"] === "Event"
+            ? parsed
+            : null) ?? null;
+      if (event) {
+        return event;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export const ingestGam = async ({
   page = 1,
   limit,
@@ -46,6 +103,9 @@ export const ingestGam = async ({
         .toArray()
         .map((item) => $(item).attr("href"))
         .filter((href): href is string => Boolean(href))
+        .filter((href) =>
+          /\/es\/que-hacer-en-gam\/[^/]+\/[^/]+\/?$/i.test(href),
+        )
         .map((href) => absoluteUrl(baseUrl, href)),
     ),
   ]
@@ -59,34 +119,56 @@ export const ingestGam = async ({
       const detailHtml = await scrapeHtml(item.sourceUrl);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
+      const jsonLdEvent = parseGamJsonLdEvent($$);
       const title =
         $$("#content h1").first().text().trim() ||
-        $$("h1").first().text().trim();
+        $$("h1").first().text().trim() ||
+        jsonLdEvent?.name?.trim() ||
+        slugFromUrl(item.sourceUrl);
       const categoryText =
+        jsonLdEvent?.genre?.trim() ??
         $$("body")
           .text()
           .match(
             /\b(Teatro|Danza|Música clásica|Música popular|Actividades|Artes Visuales y Mediales|Ideas y Pensamiento)\b/i,
-          )?.[0] ?? "Especiales";
+          )?.[0] ??
+        "Especiales";
       const dateMatch = text.match(
         /\d{1,2}\s*(?:abr|abril|may|mayo|jun|junio|jul|julio|ago|agosto|sep|sept|septiembre|oct|octubre|nov|noviembre|dic|diciembre)[^]{0,120}/i,
       );
       const dateInfo = parseSpanishDateRange(dateMatch?.[0] ?? text);
       const venueName =
+        stripHtmlTags(jsonLdEvent?.location?.name) ??
         text.match(/Sala\s+[A-Z0-9-]+(?:\s*\([^)]+\))?/i)?.[0] ??
         "Centro Cultural Gabriela Mistral";
-      const address = "Av. Libertador Bernardo O'Higgins 227, Santiago, Chile";
+      const jsonLdAddress =
+        jsonLdEvent?.location?.address?.streetAddress ||
+        jsonLdEvent?.location?.address?.addressLocality
+          ? [
+              jsonLdEvent?.location?.address?.streetAddress,
+              jsonLdEvent?.location?.address?.addressLocality,
+              jsonLdEvent?.location?.address?.addressRegion,
+              jsonLdEvent?.location?.address?.addressCountry,
+            ]
+              .filter(Boolean)
+              .join(", ")
+          : null;
+      const address =
+        jsonLdAddress ??
+        "Av. Libertador Bernardo O'Higgins 227, Santiago, Chile";
       const priceText =
         text.match(/\$\s*[\d.]+(?:[^$]{0,80}\$\s*[\d.]+){0,5}/)?.[0] ?? null;
       const pricing = parsePriceRange(priceText);
       const description =
-        $$(".entry-content, .single-content, main")
+        jsonLdEvent?.description?.trim() ??
+        ($$(".entry-content, .single-content, main")
           .find("p")
           .toArray()
           .map((node) => $$(node).text().trim())
           .filter(Boolean)
           .slice(0, 4)
-          .join(" ") || text.slice(0, 2000);
+          .join(" ") ||
+          text.slice(0, 2000));
       const location = inferLocation(address);
 
       const candidate: EventCandidate = {
@@ -98,6 +180,9 @@ export const ingestGam = async ({
         title,
         description,
         imageUrl:
+          (Array.isArray(jsonLdEvent?.image)
+            ? jsonLdEvent?.image.find((value) => Boolean(value))
+            : jsonLdEvent?.image) ??
           $$('meta[property="og:image"]').attr("content") ??
           extractImageUrl($$("img").first()) ??
           null,

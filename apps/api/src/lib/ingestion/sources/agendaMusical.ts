@@ -24,6 +24,46 @@ const isPotentialEventArticle = (title: string, text: string) =>
     `${title} ${text}`,
   );
 
+type AgendaMusicalBlogPosting = {
+  ["@type"]?: string;
+  headline?: string;
+  image?: { url?: string } | string;
+  articleSection?: string;
+};
+
+function parseAgendaMusicalBlogPosting($$: ReturnType<typeof load>) {
+  const scripts = $$('script[type="application/ld+json"]')
+    .toArray()
+    .map((node) => $$(node).html()?.trim())
+    .filter((raw): raw is string => Boolean(raw));
+
+  for (const raw of scripts) {
+    try {
+      const parsed = JSON.parse(raw) as {
+        "@graph"?: AgendaMusicalBlogPosting[];
+      };
+      const post =
+        parsed?.["@graph"]?.find((item) => item?.["@type"] === "BlogPosting") ??
+        null;
+      if (post) {
+        return post;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function extractVenueFromTitle(title: string) {
+  return (
+    title.match(/\ben\s+(?:el|la|los|las)\s+([^,·|]+)$/i)?.[1]?.trim() ??
+    title.match(/\ben\s+([^,·|]+)$/i)?.[1]?.trim() ??
+    null
+  );
+}
+
 export const ingestAgendaMusical = async ({
   page = 1,
   limit,
@@ -71,6 +111,11 @@ export const ingestAgendaMusical = async ({
       const detailHtml = await scrapeHtml(item.sourceUrl);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
+      const blogPosting = parseAgendaMusicalBlogPosting($$);
+      const articleSection = blogPosting?.articleSection?.toLowerCase() ?? "";
+      if (/review|reseña|resena|fotos|crónica|cronica/i.test(articleSection)) {
+        continue;
+      }
       const dateMatch = text.match(
         /\d{1,2}\s*(?:de)?\s*(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|sept|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)(?:\s*de\s*20\d{2})?/i,
       );
@@ -86,7 +131,9 @@ export const ingestAgendaMusical = async ({
 
       const dateInfo = parseSpanishDateRange(dateMatch[0]);
       const title =
-        $$("h1").first().text().replace(/\s+/g, " ").trim() || item.title;
+        $$("h1").first().text().replace(/\s+/g, " ").trim() ||
+        blogPosting?.headline?.trim() ||
+        item.title;
       const description =
         $$("article p")
           .toArray()
@@ -98,9 +145,13 @@ export const ingestAgendaMusical = async ({
         /(?:teatro|movistar arena|caupolic[aá]n|coliseo|club chocolate|blondie|estadio [a-záéíóúñ' -]+)/i,
       );
       const venueName =
-        normalizeVenueName(venueMatch?.[0]) ?? "Venue por confirmar";
+        normalizeVenueName(venueMatch?.[0] ?? extractVenueFromTitle(title)) ??
+        "Venue por confirmar";
       const location = inferLocation(`${venueName} ${text}`);
       const imageUrl =
+        (typeof blogPosting?.image === "string"
+          ? blogPosting.image
+          : blogPosting?.image?.url) ??
         $$('meta[property="og:image"]').attr("content") ??
         extractImageUrl($$("img").first()) ??
         null;

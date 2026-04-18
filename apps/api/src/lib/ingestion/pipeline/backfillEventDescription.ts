@@ -7,6 +7,7 @@ import { mergeCandidateWithLlm } from "./mergeCandidateWithLlm.js";
 import { scrapeDetailHtmlAndOptionalMarkdown } from "./scrapeDetailForIngest.js";
 import type { EventCandidate, RawSnippets } from "./types.js";
 import {
+  clampRawSnippets,
   eventCandidateSchema,
   llmEnrichmentPatchSchema,
   rawSnippetsSchema,
@@ -105,11 +106,13 @@ function buildSnippetsFromRescrape(params: {
     .filter(Boolean)
     .join("\n\n");
 
-  return rawSnippetsSchema.parse({
-    detail,
-    pricing: event.priceText ?? undefined,
-    ...(markdown ? { markdown } : {}),
-  });
+  return rawSnippetsSchema.parse(
+    clampRawSnippets({
+      detail,
+      pricing: event.priceText ?? undefined,
+      ...(markdown ? { markdown } : {}),
+    }),
+  );
 }
 
 function buildSnippetsDbOnly(event: EventWithTiersForBackfill): RawSnippets {
@@ -130,10 +133,12 @@ function buildSnippetsDbOnly(event: EventWithTiersForBackfill): RawSnippets {
     .filter(Boolean)
     .join("\n\n");
 
-  return rawSnippetsSchema.parse({
-    detail,
-    pricing: event.priceText ?? undefined,
-  });
+  return rawSnippetsSchema.parse(
+    clampRawSnippets({
+      detail,
+      pricing: event.priceText ?? undefined,
+    }),
+  );
 }
 
 export type BackfillDescriptionResult =

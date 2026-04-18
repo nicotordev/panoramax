@@ -44,6 +44,50 @@ function pickTicketplusDescription(params: {
   return null;
 }
 
+type TicketplusJsonLdEvent = {
+  ["@type"]?: string;
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  location?: {
+    name?: string;
+    address?: {
+      streetAddress?: string;
+      addressLocality?: string;
+      addressRegion?: string;
+      addressCountry?: string;
+    };
+  };
+};
+
+function parseTicketplusJsonLdEvent($$: ReturnType<typeof load>) {
+  const scripts = $$('script[type="application/ld+json"]')
+    .toArray()
+    .map((node) => $$(node).html()?.trim())
+    .filter((raw): raw is string => Boolean(raw));
+
+  for (const raw of scripts) {
+    try {
+      const parsed = JSON.parse(raw) as
+        | TicketplusJsonLdEvent
+        | TicketplusJsonLdEvent[];
+      const event =
+        (Array.isArray(parsed)
+          ? parsed.find((item) => item?.["@type"] === "Event")
+          : parsed?.["@type"] === "Event"
+            ? parsed
+            : null) ?? null;
+      if (event) {
+        return event;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export const ingestTicketplus = async ({
   page = 1,
   limit,
@@ -69,6 +113,8 @@ export const ingestTicketplus = async ({
   const offset = Math.max(page - 1, 0) * requestedLimit;
   const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
   const events = [];
+  const genericSpanishDateMatch =
+    /\d{1,2}\s*(?:de)?\s*(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|sept|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)(?:\s*(?:de)?\s*20\d{2})?(?:[^\d]{1,10}\d{1,2}[:.]\d{2})?/i;
 
   for (const sourceUrl of candidateLinks) {
     try {
@@ -76,6 +122,7 @@ export const ingestTicketplus = async ({
         await scrapeDetailHtmlAndOptionalMarkdown(sourceUrl, enrichWithLlm);
       const $$ = load(detailHtml);
       const text = extractBodyText(detailHtml);
+      const jsonLdEvent = parseTicketplusJsonLdEvent($$);
       const h2Texts = $$("h2")
         .toArray()
         .map((node) => $$(node).text().replace(/\s+/g, " ").trim())
@@ -100,6 +147,7 @@ export const ingestTicketplus = async ({
           .text()
           .match(/Entradas para (.+?) - Ticketplus/i)?.[1]
           ?.trim() ??
+        jsonLdEvent?.name?.trim() ??
         slugFromUrl(sourceUrl);
       const categoryText =
         text.match(/\b(Teatro|Deportes|Fiestas|Música|Familia)\b/i)?.[0] ??
@@ -113,8 +161,13 @@ export const ingestTicketplus = async ({
           /(?:lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\s+\d{1,2}\s+al\s+(?:lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2}/i,
         )?.[0] ??
         null;
-      const dateInfo = parseSpanishDateRange(dateText ?? text);
-      const venueName =
+      const parsedDateFallback =
+        text.match(genericSpanishDateMatch)?.[0] ?? null;
+      const resolvedDateText = dateText ?? parsedDateFallback;
+      const dateInfo = resolvedDateText
+        ? parseSpanishDateRange(resolvedDateText)
+        : null;
+      const venueNameRaw =
         normalizeVenueName(
           h2Texts
             .find((value) => /^business\b/i.test(value))
@@ -122,13 +175,29 @@ export const ingestTicketplus = async ({
             h4Texts.find((value) =>
               /\/|teatro|arena|club|estadio|matucana/i.test(value),
             ) ??
-            "Venue sin informar",
-        ) ?? "Venue sin informar";
+            jsonLdEvent?.location?.name ??
+            null,
+        ) ?? null;
+      const venueName = venueNameRaw ?? "Venue por confirmar";
+      const schemaAddress =
+        jsonLdEvent?.location?.address?.streetAddress ||
+        jsonLdEvent?.location?.address?.addressLocality ||
+        jsonLdEvent?.location?.address?.addressRegion
+          ? [
+              jsonLdEvent?.location?.address?.streetAddress,
+              jsonLdEvent?.location?.address?.addressLocality,
+              jsonLdEvent?.location?.address?.addressRegion,
+              jsonLdEvent?.location?.address?.addressCountry,
+            ]
+              .filter(Boolean)
+              .join(", ")
+          : null;
       const address =
         h2Texts
           .find((value) => /^place\b/i.test(value))
           ?.replace(/^place\s*/i, "") ??
         h2Texts.find((value) => value.includes("Chile") && value !== title) ??
+        schemaAddress ??
         null;
       const location = inferLocation(address ?? venueName);
       const priceText =
@@ -154,11 +223,11 @@ export const ingestTicketplus = async ({
         null;
       const audience = mapAudience(text);
 
-      if (!dateText || venueName === "Venue sin informar") {
+      if (!resolvedDateText || !dateInfo) {
         errors.push({
           stage: "normalize",
           url: sourceUrl,
-          message: "Ticketplus event skipped due to missing date or venue",
+          message: "Ticketplus event skipped due to missing date",
         });
         continue;
       }
@@ -172,10 +241,21 @@ export const ingestTicketplus = async ({
         title,
         description,
         imageUrl,
-        dateText,
-        startAtIso: dateInfo.startAt.toISOString(),
-        endAtIso: dateInfo.endAt?.toISOString() ?? null,
-        allDay: dateInfo.allDay,
+        dateText: resolvedDateText,
+        startAtIso:
+          jsonLdEvent?.startDate &&
+          !Number.isNaN(new Date(jsonLdEvent.startDate).getTime())
+            ? new Date(jsonLdEvent.startDate).toISOString()
+            : dateInfo.startAt.toISOString(),
+        endAtIso:
+          jsonLdEvent?.endDate &&
+          !Number.isNaN(new Date(jsonLdEvent.endDate).getTime())
+            ? new Date(jsonLdEvent.endDate).toISOString()
+            : (dateInfo.endAt?.toISOString() ?? null),
+        allDay:
+          jsonLdEvent?.startDate && !/T\d{2}:\d{2}/.test(jsonLdEvent.startDate)
+            ? true
+            : dateInfo.allDay,
         venueName,
         address,
         commune: location.commune,
@@ -190,6 +270,11 @@ export const ingestTicketplus = async ({
         categoriesSource: [categoryText],
         tags: ["ticketplus", "ticketing"],
         audience,
+        needsReview: venueNameRaw === null,
+        reviewNotes:
+          venueNameRaw === null
+            ? "Venue missing in source; using fallback venue placeholder"
+            : undefined,
         parserPayload: {
           detailText: text.slice(0, 5000),
         },
@@ -199,7 +284,7 @@ export const ingestTicketplus = async ({
       const snippets: RawSnippets = {
         detail: [
           `TITLE:\n${title}`,
-          dateText ? `DATE:\n${dateText}` : null,
+          resolvedDateText ? `DATE:\n${resolvedDateText}` : null,
           `VENUE:\n${venueName}`,
           address ? `ADDRESS:\n${address}` : null,
           categoryText ? `CATEGORY:\n${categoryText}` : null,

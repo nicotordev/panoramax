@@ -7,7 +7,11 @@ import {
   type NormalizeEventFinalMeta,
 } from "./normalizeEventFinal.js";
 import type { EventCandidate, RawSnippets } from "./types.js";
-import { eventCandidateSchema, rawSnippetsSchema } from "./types.js";
+import {
+  clampRawSnippets,
+  eventCandidateSchema,
+  rawSnippetsSchema,
+} from "./types.js";
 
 export type FinalizeIngestedEventResult = {
   event: EventCreateInput;
@@ -24,7 +28,7 @@ export async function finalizeIngestedEvent(
   options?: { enrichWithLlm?: boolean },
 ): Promise<FinalizeIngestedEventResult> {
   const candidate = eventCandidateSchema.parse(candidateInput);
-  const snippets = rawSnippetsSchema.parse(snippetsInput);
+  const snippets = rawSnippetsSchema.parse(clampRawSnippets(snippetsInput));
 
   const runLlm = shouldRunLlmEnrichment(options?.enrichWithLlm);
   let merged: EventCandidate = candidate;

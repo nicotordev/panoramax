@@ -46,6 +46,8 @@ export const ingestPuntoticket = async ({
   const offset = Math.max(page - 1, 0) * requestedLimit;
   const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
   const events = [];
+  const genericSpanishDateMatch =
+    /\d{1,2}\s*(?:de)?\s*(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|sept|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)(?:\s*(?:de)?\s*20\d{2})?(?:[^\d]{1,10}\d{1,2}[:.]\d{2})?/i;
 
   for (const sourceUrl of candidateLinks) {
     try {
@@ -70,6 +72,7 @@ export const ingestPuntoticket = async ({
           .replace(/\s+-\s+.*$/, "")
           .trim() ||
         slugFromUrl(sourceUrl);
+      const h2Headline = $$("h2").first().text().replace(/\s+/g, " ").trim();
       const categoryText =
         text.match(
           /\b(Rock|Festival|Pop Latino|Baladas|Reggaetón|Heavy Metal|Techno|Funk|Humor|Infantil|Fútbol|Conciertos|Teatro|Familia|Especiales|Salsa|Disco|K-Pop)\b/i,
@@ -82,17 +85,28 @@ export const ingestPuntoticket = async ({
         text.match(
           /\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2}(?:\s+al\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2})?/i,
         )?.[0] ??
+        title.match(
+          /\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2}(?:\s+al\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+20\d{2})?/i,
+        )?.[0] ??
         null;
-      const dateInfo = parseSpanishDateRange(dateText ?? text);
+      const parsedDateFallback =
+        text.match(genericSpanishDateMatch)?.[0] ?? null;
+      const resolvedDateText = dateText ?? parsedDateFallback;
+      const dateInfo = resolvedDateText
+        ? parseSpanishDateRange(resolvedDateText)
+        : null;
       const venueLine =
         text.match(/Lugar\s+(.+?)\s+Tipo de evento/i)?.[1] ??
         text.match(
           /(?:Rock|Festival|Pop Latino|Baladas|Reggaetón|Heavy Metal|Techno|Funk|Humor|Infantil|Fútbol|Conciertos|Teatro|Familia|Especiales|Salsa|Disco|K-Pop)\s+([^\d]+?)\s+\d{2}-\d{2}-20\d{2}/i,
         )?.[1] ??
         text.match(/([A-ZÁÉÍÓÚ0-9' .-]+)\s+\d{2}-\d{2}-20\d{2}/i)?.[1] ??
-        "Venue sin informar";
-      const venueName =
-        normalizeVenueName(venueLine.trim()) ?? venueLine.trim();
+        h2Headline.match(/\ben\s+(.+)$/i)?.[1] ??
+        title.match(/\ben\s+(.+?)\s*·/i)?.[1] ??
+        null;
+      const venueNameRaw =
+        normalizeVenueName(venueLine?.trim()) ?? venueLine?.trim() ?? null;
+      const venueName = venueNameRaw ?? "Venue por confirmar";
       const address = venueName;
       const location = inferLocation(address);
       const priceText =
@@ -120,11 +134,11 @@ export const ingestPuntoticket = async ({
         null;
       const audience = mapAudience(text);
 
-      if (!dateText || venueName === "Venue sin informar") {
+      if (!resolvedDateText || !dateInfo) {
         errors.push({
           stage: "normalize",
           url: sourceUrl,
-          message: "PuntoTicket event skipped due to missing date or venue",
+          message: "PuntoTicket event skipped due to missing date",
         });
         continue;
       }
@@ -138,7 +152,7 @@ export const ingestPuntoticket = async ({
         title,
         description,
         imageUrl,
-        dateText,
+        dateText: resolvedDateText,
         startAtIso: dateInfo.startAt.toISOString(),
         endAtIso: dateInfo.endAt?.toISOString() ?? null,
         allDay: dateInfo.allDay,
@@ -156,6 +170,11 @@ export const ingestPuntoticket = async ({
         categoriesSource: [categoryText],
         tags: ["puntoticket", "ticketing"],
         audience,
+        needsReview: venueNameRaw === null,
+        reviewNotes:
+          venueNameRaw === null
+            ? "Venue missing in source; using fallback venue placeholder"
+            : undefined,
         parserPayload: {
           detailText: text.slice(0, 5000),
         },
@@ -165,7 +184,7 @@ export const ingestPuntoticket = async ({
       const snippets: RawSnippets = {
         detail: [
           `TITLE:\n${title}`,
-          dateText ? `DATE:\n${dateText}` : null,
+          resolvedDateText ? `DATE:\n${resolvedDateText}` : null,
           `VENUE:\n${venueName}`,
           address ? `ADDRESS:\n${address}` : null,
           categoryText ? `CATEGORY:\n${categoryText}` : null,

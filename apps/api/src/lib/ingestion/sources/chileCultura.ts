@@ -1,8 +1,5 @@
 import { load } from "cheerio";
-import {
-  CategoryType,
-  SourceType,
-} from "../../../generated/prisma/enums.js";
+import { CategoryType, SourceType } from "../../../generated/prisma/enums.js";
 import { scrapeHtml } from "../../brightdata.js";
 import type { EventCreateInput } from "../../validation/events.schema.js";
 import type {
@@ -12,6 +9,7 @@ import type {
 } from "../core/shared.js";
 import {
   extractImageUrl,
+  inferLocation,
   isPastEvent,
   upsertEvent,
 } from "../core/shared.js";
@@ -26,6 +24,7 @@ type ChileCulturaListingItem = {
   location: string;
   dateText: string;
   categoryText: string;
+  ticketText: string | null;
   isFree: boolean;
   imageUrl: string | null;
 };
@@ -116,6 +115,10 @@ export class ChileCulturaIngestor {
           return null;
         }
 
+        const ticketText = this.normalizeText(
+          $(item).find(".event-ticket").text(),
+        );
+
         return {
           sourceEventId,
           sourceUrl: this.absoluteUrl(link),
@@ -129,9 +132,8 @@ export class ChileCulturaIngestor {
             this.normalizeText($(item).find(".event-date").text()) ?? "",
           categoryText:
             this.normalizeText($(item).find(".event-category").text()) ?? "",
-          isFree: Boolean(
-            this.normalizeText($(item).find(".event-ticket").text()),
-          ),
+          ticketText,
+          isFree: /gratis|liberad[oa]|sin costo/i.test(ticketText ?? ""),
           imageUrl: this.normalizeText(
             extractImageUrl($(item).find("img.event-image")),
           ),
@@ -289,12 +291,15 @@ export class ChileCulturaIngestor {
       detail.timeText,
     );
     const venueName = detail.venueName ?? listingItem.location;
+    const location = inferLocation(
+      detail.address ?? detail.venueName ?? listingItem.location,
+    );
     const city =
       detail.region?.includes("Metropolitana") ||
       listingItem.location.includes("Metropolitana")
         ? this.defaultCity
-        : "Sin ciudad informada";
-    const commune = this.unknownCommune;
+        : location.city;
+    const commune = location.commune || this.unknownCommune;
 
     const candidate: EventCandidate = {
       source: "chile_cultura",
@@ -316,6 +321,7 @@ export class ChileCulturaIngestor {
       city,
       region: detail.region,
       isFree: listingItem.isFree,
+      priceText: listingItem.ticketText,
       categoryPrimary: this.mapCategory(listingItem.categoryText),
       categoryText: listingItem.categoryText,
       categoriesSource: [listingItem.categoryText],
