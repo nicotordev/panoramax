@@ -5,6 +5,7 @@
     "events": "Veranstaltungen",
     "thisWeek": "Diese Woche",
     "free": "Kostenlos",
+    "isFree": "Kostenlos",
     "login": "Anmelden",
     "openMainMenu": "Hauptmenü öffnen",
     "closeMenu": "Menü schließen",
@@ -74,7 +75,8 @@
     "bentoGridIntro": "Eine kuratierte Auswahl herausragender Events, die gerade stattfinden.",
     "viewCompleteAgenda": "Vollständige Agenda ansehen",
     "event": "Event",
-    "free": "Kostenlos"
+    "free": "Kostenlos",
+    "isFree": "Kostenlos"
   },
   "BlogPage": {
     "title": "Panoramax Notizen",

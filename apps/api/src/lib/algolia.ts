@@ -138,6 +138,7 @@ class Algolia {
             "region",
             "categoryPrimary",
             "audience",
+            "isFree",
           ],
           replicas: [
             EVENTS_INDEX_START_AT_ASC_REPLICA,

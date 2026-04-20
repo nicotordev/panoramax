@@ -5,6 +5,7 @@
     "events": "Eventos",
     "thisWeek": "Esta semana",
     "free": "Gratis",
+    "isFree": "Gratis",
     "login": "Iniciar sesión",
     "openMainMenu": "Abrir menú principal",
     "closeMenu": "Cerrar menú",
@@ -74,7 +75,8 @@
     "bentoGridIntro": "Una selección curada de eventos imperdibles para estos días.",
     "viewCompleteAgenda": "Ver agenda completa",
     "event": "Evento",
-    "free": "Gratis"
+    "free": "Gratis",
+    "isFree": "Gratis"
   },
   "BlogPage": {
     "title": "Notas Panoramax",

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import type { Event } from "@/types/api"
@@ -28,6 +29,7 @@ import {
   usePagination,
   useRefinementList,
   useSearchBox,
+  useToggleRefinement,
 } from "react-instantsearch"
 import { InstantSearchNext } from "react-instantsearch-nextjs"
 
@@ -170,6 +172,52 @@ function CustomRefinementList({
   )
 }
 
+function CustomToggle({
+  attribute,
+  title,
+  label,
+}: {
+  attribute: string
+  title: string
+  label: string
+}) {
+  const { value, refine, canRefine } = useToggleRefinement({
+    attribute,
+    on: true,
+  })
+
+  return (
+    <div className="mb-8">
+      <h3 className="mb-4 text-base font-bold tracking-tight">{title}</h3>
+      <label
+        className={cn(
+          "group flex items-center gap-3",
+          canRefine ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+        )}
+      >
+        <Switch
+          checked={value.isRefined}
+          disabled={!canRefine}
+          onCheckedChange={() => {
+            // InstantSearch `refine` expects the *current* refined state, not the next one.
+            refine({ isRefined: value.isRefined })
+          }}
+          aria-label={label}
+        />
+        <span className="flex-1 text-sm leading-tight font-medium text-foreground/80 transition-colors group-hover:text-foreground">
+          {label}
+        </span>
+        <Badge
+          variant="secondary"
+          className="mt-0.5 ml-auto border-white/10 bg-background/50 px-1.5 py-0.5 text-[10px] leading-none font-medium backdrop-blur-sm dark:bg-black/40"
+        >
+          {value.count}
+        </Badge>
+      </label>
+    </div>
+  )
+}
+
 function CustomHits({ locale }: { locale: string }) {
   const { items } = useHits<BaseHit>()
   const { status, results } = useInstantSearch()
@@ -217,6 +265,7 @@ function CustomHits({ locale }: { locale: string }) {
         const imageUrl =
           eventHit.imageUrl ||
           "https://placehold.co/600x400/222/FFF?text=Panoramax"
+        const imageUnoptimized = !eventHit.imageUrl
 
         return (
           <Link key={hit.objectID} href={`/events/${slug}`}>
@@ -227,6 +276,7 @@ function CustomHits({ locale }: { locale: string }) {
                   src={imageUrl}
                   alt={title}
                   fill
+                  unoptimized={imageUnoptimized}
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
@@ -420,6 +470,11 @@ export default function EventsAlgoliaSearch({
               attribute="audience"
               title="Público"
               transformLabel={formatAudienceFacetLabel}
+            />
+            <CustomToggle
+              attribute="isFree"
+              title="Gratis"
+              label="Solo gratis"
             />
           </div>
         </aside>

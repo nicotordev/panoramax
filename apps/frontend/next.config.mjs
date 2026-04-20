@@ -19,6 +19,11 @@ const nextConfig = {
         hostname: "*.r2.dev",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+        pathname: "/**",
+      },
     ],
   },
 }
