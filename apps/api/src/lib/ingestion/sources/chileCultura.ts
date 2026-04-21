@@ -49,9 +49,25 @@ export class ChileCulturaIngestor {
   private readonly unknownCommune = "Sin comuna informada";
 
   private static readonly regionNameById: Record<string, string> = {
+    "15": "Región de Arica y Parinacota",
+    "01": "Región de Tarapacá",
+    "02": "Región de Antofagasta",
+    "03": "Región de Atacama",
+    "04": "Región de Coquimbo",
+    "05": "Región de Valparaíso",
     "13": "Región Metropolitana de Santiago",
+    "06": "Región del Libertador General Bernardo O'Higgins",
+    "07": "Región del Maule",
+    "16": "Región de Ñuble",
+    "08": "Región del Biobío",
+    "09": "Región de La Araucanía",
+    "14": "Región de Los Ríos",
+    "10": "Región de Los Lagos",
+    "11": "Región de Aysén del General Carlos Ibáñez del Campo",
+    "12": "Región de Magallanes y de la Antártica Chilena",
   };
 
+  
   private static readonly categoryMap: Record<string, CategoryType> = {
     "artes visuales": CategoryType.exhibition,
     cine: CategoryType.special_experience,
@@ -99,6 +115,16 @@ export class ChileCulturaIngestor {
 
   private normalizeText(value: string | null | undefined) {
     return value?.replace(/\s+/g, " ").trim() || null;
+  }
+
+  /** Algunas fichas repiten el mismo texto dos veces en un solo nodo h1. */
+  private dedupeRepeatedHeadline(value: string | null | undefined) {
+    const t = value?.replace(/\s+/g, " ").trim() ?? "";
+    if (t.length < 4 || t.length % 2 !== 0) {
+      return t || null;
+    }
+    const half = t.length / 2;
+    return t.slice(0, half) === t.slice(half) ? t.slice(0, half).trim() : t;
   }
 
   private parseListingPage(html: string): ChileCulturaListingItem[] {
@@ -191,7 +217,7 @@ export class ChileCulturaIngestor {
       ? this.normalizeText(new URL(scheduleHref).searchParams.get("location"))
       : null;
 
-    const description = this.normalizeText(
+    let description = this.normalizeText(
       $(".col-lg-12")
         .toArray()
         .map((item) => {
@@ -206,8 +232,34 @@ export class ChileCulturaIngestor {
         .find((value) => value),
     );
 
+    if (!description) {
+      const descBlock = $("h2")
+        .filter(
+          (_, el) =>
+            $(el).text().replace(/\s+/g, " ").trim().startsWith("Descripción"),
+        )
+        .first();
+      const paras = descBlock
+        .parent()
+        .find("p")
+        .toArray()
+        .map((el) => this.normalizeText($(el).text()))
+        .filter((p): p is string => Boolean(p));
+      description = paras.length > 0 ? paras.join(" ") : null;
+    }
+
+    if (!description) {
+      description = this.normalizeText(
+        $('meta[name="description"]').attr("content"),
+      );
+    }
+
+    const rawH1 = $("h1").first().text();
     return {
-      title: this.normalizeText($("h1").first().text()) ?? "Sin título",
+      title:
+        this.dedupeRepeatedHeadline(rawH1) ||
+        this.normalizeText(rawH1) ||
+        "Sin título",
       region,
       timeText,
       venueName: venueBlock?.value ?? null,

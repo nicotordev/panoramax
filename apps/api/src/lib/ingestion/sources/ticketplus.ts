@@ -1,4 +1,5 @@
-import { load } from "cheerio";
+import { load, type Cheerio } from "cheerio";
+import type { AnyNode } from "domhandler";
 import { SourceType } from "../../../generated/prisma/enums.js";
 import { defaultBrightDataFetchHtml } from "../core/defaultFetchHtml.js";
 import {
@@ -21,6 +22,14 @@ import { ticketingSnippetLooksPolluted } from "../pipeline/descriptionPollution.
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import { scrapeDetailHtmlAndOptionalMarkdown } from "../pipeline/scrapeDetailForIngest.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
+import {
+  dedupeListingRowsByUrl,
+  mergeListingDetailStrings,
+  mergeOptionalDateText,
+  mergeOptionalImage,
+  type ListingRow,
+} from "../pipeline/twoStepListing.js";
+import { GENERIC_SPANISH_DATE_REGEX } from "../core/parsing-constants.js";
 
 /**
  * Never use a raw body-text slice as description (it pulls nav, country picker, etc.).
@@ -87,6 +96,146 @@ function parseTicketplusJsonLdEvent($$: ReturnType<typeof load>) {
   return null;
 }
 
+/** Título desde el detalle sin fallback a slug (para fusionar con prefetch del listado). */
+function tryTicketplusTitleFromDetail(
+  $$: ReturnType<typeof load>,
+  jsonLdName: string | undefined,
+  h2Texts: string[],
+): string | null {
+  const og = $$('meta[property="og:title"]').attr("content")?.trim();
+  if (og) {
+    const cleaned = og
+      .replace(/^Entradas para\s+/i, "")
+      .replace(/\s*-\s*Ticketplus\s*$/i, "")
+      .trim();
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+  if (jsonLdName?.trim()) {
+    return jsonLdName.trim();
+  }
+  const fromH2 = h2Texts.find(
+    (value) =>
+      value !== "Location" &&
+      !value.includes(", Chile") &&
+      !/\d{4}|hrs/i.test(value) &&
+      !/^event\b/i.test(value) &&
+      !/^business\b/i.test(value) &&
+      !/^place\b/i.test(value),
+  );
+  if (fromH2) {
+    return fromH2;
+  }
+  const fromTitle = $$("title")
+    .text()
+    .match(/Entradas para (.+?) - Ticketplus/i)?.[1]
+    ?.trim();
+  if (fromTitle) {
+    return fromTitle;
+  }
+  return null;
+}
+
+/** Fase 1: índice regional — tarjetas `.element-item` o enlaces sueltos a `/events/`. */
+function parseTicketplusListingRows(
+  $: ReturnType<typeof load>,
+  baseUrl: string,
+): ListingRow[] {
+  const rows: ListingRow[] = [];
+
+  const pushRow = (params: {
+    href: string;
+    card?: Cheerio<AnyNode>;
+    linkText?: string;
+  }) => {
+    if (!params.href.startsWith("/events/")) {
+      return;
+    }
+    const url = absoluteUrl(baseUrl, params.href);
+    if (/\/events\/(?:abono|membresia)-/i.test(url)) {
+      return;
+    }
+    const card = params.card;
+    const imageUrl = card
+      ? extractImageUrl(card.find("img").first())
+      : null;
+    const cardTitle = card
+      ? card
+          .find("h2, h3, h4, .title, [class*='title']")
+          .first()
+          .text()
+          .replace(/\s+/g, " ")
+          .trim() ||
+        card.find("a[href^='/events/'], a[href^=\"/events/\"]").first().attr("title")?.trim() ||
+        null
+      : null;
+    rows.push({
+      sourceUrl: url,
+      sourceEventId: slugFromUrl(url),
+      prefetch: {
+        ...(cardTitle ? { title: cardTitle } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        listingSnippet: card
+          ? card.text().replace(/\s+/g, " ").trim().slice(0, 1200)
+          : (params.linkText ?? "").slice(0, 800),
+      },
+    });
+  };
+
+  const items = $(".element-item");
+  if (items.length > 0) {
+    items.toArray().forEach((node) => {
+      const card = $(node);
+      const a = card
+        .find("a[href^='/events/'], a[href^=\"/events/\"]")
+        .first();
+      const href = a.attr("href");
+      if (!href) {
+        return;
+      }
+      pushRow({ href, card });
+    });
+  }
+
+  if (rows.length === 0) {
+    const cardEventAnchors = $(
+      ".element-item a[href^='/events/'], .element-item a[href^=\"/events/\"]",
+    );
+    const listingAnchors =
+      cardEventAnchors.length > 0
+        ? cardEventAnchors
+        : $(
+            '[data-referal-link], .element-item a[href^="/events/"], a[href^="/events/"]',
+          );
+    listingAnchors.toArray().forEach((node) => {
+      const el = $(node);
+      let href = el.attr("href");
+      if (!href?.startsWith("/events/")) {
+        href =
+          el
+            .find("a[href^='/events/'], a[href^=\"/events/\"]")
+            .first()
+            .attr("href") ?? undefined;
+      }
+      if (!href?.startsWith("/events/")) {
+        return;
+      }
+      const item = el.closest(".element-item");
+      if (item.length > 0) {
+        pushRow({ href, card: item });
+      } else {
+        pushRow({
+          href,
+          linkText: el.text().replace(/\s+/g, " ").trim(),
+        });
+      }
+    });
+  }
+
+  return dedupeListingRowsByUrl(rows);
+}
+
 export const ingestTicketplus = async ({
   page = 1,
   limit,
@@ -101,23 +250,13 @@ export const ingestTicketplus = async ({
   const listingHtml = await fetchHtml(listingUrl);
   const $ = load(listingHtml);
   const requestedLimit = limit ?? 20;
-  const listingLinks = [
-    ...new Set(
-      $('[data-referal-link], .element-item a[href^="/events/"]')
-        .toArray()
-        .map((node) => $(node).attr("href"))
-        .filter((href): href is string => Boolean(href))
-        .filter((href) => href.startsWith("/events/"))
-        .map((href) => absoluteUrl(baseUrl, href)),
-    ),
-  ].filter((url) => !/\/events\/(?:abono|membresia)-/i.test(url));
+  const listingRows = parseTicketplusListingRows($, baseUrl);
   const offset = Math.max(page - 1, 0) * requestedLimit;
-  const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
+  const candidateRows = listingRows.slice(offset, offset + requestedLimit);
   const events = [];
-  const genericSpanishDateMatch =
-    /\d{1,2}\s*(?:de)?\s*(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|sept|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)(?:\s*(?:de)?\s*20\d{2})?(?:[^\d]{1,10}\d{1,2}[:.]\d{2})?/i;
 
-  for (const sourceUrl of candidateLinks) {
+  for (const row of candidateRows) {
+    const sourceUrl = row.sourceUrl;
     try {
       const { html: detailHtml, markdown: pageMarkdown } =
         await scrapeDetailHtmlAndOptionalMarkdown(
@@ -138,22 +277,12 @@ export const ingestTicketplus = async ({
         .filter(Boolean);
       const introText =
         $$(".intro-div").first().text().replace(/\s+/g, " ").trim() || null;
-      const title =
-        h2Texts.find(
-          (value) =>
-            value !== "Location" &&
-            !value.includes(", Chile") &&
-            !/\d{4}|hrs/i.test(value) &&
-            !/^event\b/i.test(value) &&
-            !/^business\b/i.test(value) &&
-            !/^place\b/i.test(value),
-        ) ??
-        $$("title")
-          .text()
-          .match(/Entradas para (.+?) - Ticketplus/i)?.[1]
-          ?.trim() ??
-        jsonLdEvent?.name?.trim() ??
-        slugFromUrl(sourceUrl);
+      const title = mergeListingDetailStrings({
+        detailTitle:
+          tryTicketplusTitleFromDetail($$, jsonLdEvent?.name, h2Texts) ?? "",
+        listingTitle: row.prefetch.title,
+        sourceUrl,
+      });
       const categoryText =
         text.match(/\b(Teatro|Deportes|Fiestas|Música|Familia)\b/i)?.[0] ??
         "Especiales";
@@ -167,8 +296,11 @@ export const ingestTicketplus = async ({
         )?.[0] ??
         null;
       const parsedDateFallback =
-        text.match(genericSpanishDateMatch)?.[0] ?? null;
-      const resolvedDateText = dateText ?? parsedDateFallback;
+        [...text.matchAll(GENERIC_SPANISH_DATE_REGEX)][0]?.[0] ?? null;
+      const resolvedDateText = mergeOptionalDateText(
+        dateText ?? parsedDateFallback,
+        row.prefetch.dateText,
+      );
       const dateInfo = resolvedDateText
         ? parseSpanishDateRange(resolvedDateText)
         : null;
@@ -219,13 +351,15 @@ export const ingestTicketplus = async ({
         )?.[0] ??
         null;
       const description = pickTicketplusDescription({ eventText, introText });
-      const imageUrl =
+      const imageUrl = mergeOptionalImage(
         $$('meta[property="og:image"]').attr("content") ??
-        $$("img")
-          .toArray()
-          .map((node) => extractImageUrl($$(node)))
-          .find((src) => Boolean(src && !src.includes("logo"))) ??
-        null;
+          $$("img")
+            .toArray()
+            .map((node) => extractImageUrl($$(node)))
+            .find((src) => Boolean(src && !src.includes("logo"))) ??
+          null,
+        row.prefetch.imageUrl,
+      );
       const audience = mapAudience(text);
 
       if (!resolvedDateText || !dateInfo) {
@@ -282,11 +416,17 @@ export const ingestTicketplus = async ({
             : undefined,
         parserPayload: {
           detailText: text.slice(0, 5000),
+          listingPrefetch: row.prefetch,
         },
         qualityScore: 88,
       };
 
       const snippets: RawSnippets = {
+        ...(row.prefetch.listingSnippet
+          ? {
+              listing: `LISTING:\n${row.prefetch.listingSnippet.slice(0, 7500)}`,
+            }
+          : {}),
         detail: [
           `TITLE:\n${title}`,
           resolvedDateText ? `DATE:\n${resolvedDateText}` : null,
@@ -362,8 +502,8 @@ export const ingestTicketplus = async ({
     listingUrl,
     page,
     count: events.length,
-    processed: candidateLinks.length,
-    skipped: Math.max(candidateLinks.length - events.length, 0),
+    processed: candidateRows.length,
+    skipped: Math.max(candidateRows.length - events.length, 0),
     persisted: persist,
     errors,
     events,

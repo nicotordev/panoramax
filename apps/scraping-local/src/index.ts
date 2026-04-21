@@ -118,11 +118,14 @@ Options:
   --enrich-llm
   --dry-run             (no API writes)
   --sources=a,b         (with "all": subset and order)
-  --parallel-sources    (run each source in parallel; one browser per source)
+  --parallel-sources    (force parallel: one Playwright browser per source)
+  --sequential          (with "all": one browser, sources one after another)
   --loop                (repeat forever; use SIGINT to stop)
   --cycle-sleep-ms=N    (pause between full passes; default 300000 when --loop)
   --max-cycles=N        (run N full passes over the source list, then exit)
   --source-delay-ms=N   (sequential mode only: pause between sources; default 0)
+
+  Note: "all" with 2+ sources runs in parallel by default (same as --parallel-sources).
 `);
     process.exit(1);
   }
@@ -132,8 +135,6 @@ Options:
   const region = argValue("region");
   const dryRun = hasFlag("dry-run");
   const enrichWithLlm = hasFlag("enrich-llm");
-  const parallelSources =
-    hasFlag("parallel-sources") || hasFlag("parallel");
   const loopForever = hasFlag("loop");
   const maxCyclesRaw = argValue("max-cycles");
   const maxCycles = maxCyclesRaw ? Math.max(1, Number(maxCyclesRaw)) : null;
@@ -144,6 +145,14 @@ Options:
 
   const filter = parseSourcesFilter();
   const sources = resolveSourceList(command, filter);
+
+  const sequentialPreferred =
+    hasFlag("sequential") || hasFlag("sequential-sources");
+  const parallelSources =
+    !sequentialPreferred &&
+    (hasFlag("parallel-sources") ||
+      hasFlag("parallel") ||
+      (command === "all" && sources.length > 1));
 
   let stopRequested = false;
   const onSigint = () => {
@@ -278,7 +287,7 @@ Options:
     } else {
       if (parallelSources && sources.length === 1) {
         console.info(
-          "[scraping-local] --parallel-sources ignorado (solo una fuente); usando una sesión.",
+          "[scraping-local] parallel mode ignored (only one source); using one session.",
         );
       }
       await runPassSequential(passLabel);

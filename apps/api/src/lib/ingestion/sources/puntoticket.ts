@@ -1,4 +1,5 @@
-import { load } from "cheerio";
+import { load, type Cheerio } from "cheerio";
+import type { AnyNode } from "domhandler";
 import { SourceType } from "../../../generated/prisma/enums.js";
 import { defaultBrightDataFetchHtml } from "../core/defaultFetchHtml.js";
 import {
@@ -20,6 +21,131 @@ import {
 import { finalizeIngestedEvent } from "../pipeline/finalizeIngestedEvent.js";
 import { scrapeDetailHtmlAndOptionalMarkdown } from "../pipeline/scrapeDetailForIngest.js";
 import type { EventCandidate, RawSnippets } from "../pipeline/types.js";
+import {
+  dedupeListingRowsByUrl,
+  mergeListingDetailStrings,
+  mergeOptionalDateText,
+  mergeOptionalImage,
+  type ListingRow,
+} from "../pipeline/twoStepListing.js";
+import { GENERIC_SPANISH_DATE_REGEX } from "../core/parsing-constants.js";
+
+/** Título desde el detalle sin fallback a slug (para fusionar con prefetch del listado). */
+function tryPuntoticketTitleFromDetail(
+  $$: ReturnType<typeof load>,
+): string | null {
+  const og = $$('meta[property="og:title"]').attr("content")?.trim();
+  if (og) {
+    const parts = og
+      .split("|")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const withoutVendor = parts.filter(
+      (p) => !/punto\s*ticket|^entradas\s+por/i.test(p),
+    );
+    const head = (withoutVendor[0] ?? og).trim();
+    if (head) {
+      return head;
+    }
+  }
+  const titleTag = $$("title").text().trim();
+  if (titleTag) {
+    const cleaned = titleTag
+      .replace(/^Entradas\s*/i, "")
+      .replace(/\s+-\s+.*$/, "")
+      .replace(/\s*\|\s*Entradas por Punto Ticket\s*$/i, "")
+      .trim();
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+  const h1 = $$("h1").first().text().trim();
+  if (h1) {
+    return h1;
+  }
+  return null;
+}
+
+/** Fase 1: índice `/todos` — enlaces + datos de tarjeta si existen en el DOM. */
+function parsePuntoticketListingRows(
+  $: ReturnType<typeof load>,
+  baseUrl: string,
+): ListingRow[] {
+  const rows: ListingRow[] = [];
+
+  const pushRow = (params: {
+    href: string;
+    card?: Cheerio<AnyNode>;
+    linkText?: string;
+  }) => {
+    const url = absoluteUrl(baseUrl, params.href);
+    if (/\/paginas\//.test(url) || /\/evento\/?$/.test(url)) {
+      return;
+    }
+    const card = params.card;
+    const imageUrl = card
+      ? extractImageUrl(card.find("img").first())
+      : null;
+    const cardTitle = card
+      ? card
+          .find("h2, h3, h4, .titulo-evento, [class*='title'], .card-title")
+          .first()
+          .text()
+          .replace(/\s+/g, " ")
+          .trim() ||
+        card.find("a[href]").first().attr("title")?.trim() ||
+        null
+      : null;
+    rows.push({
+      sourceUrl: url,
+      sourceEventId: slugFromUrl(url),
+      prefetch: {
+        ...(cardTitle ? { title: cardTitle } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        listingSnippet: card
+          ? card.text().replace(/\s+/g, " ").trim().slice(0, 1200)
+          : (params.linkText ?? "").slice(0, 800),
+      },
+    });
+  };
+
+  const articles = $("#listado-eventos-shuffle article");
+  if (articles.length > 0) {
+    articles.toArray().forEach((node) => {
+      const card = $(node);
+      const href = card.find("a[href]").first().attr("href");
+      if (!href) {
+        return;
+      }
+      pushRow({ href, card });
+    });
+  }
+
+  if (rows.length === 0) {
+    const listingAnchors =
+      $("#listado-eventos-shuffle article a[href]").length > 0
+        ? $("#listado-eventos-shuffle article a[href]")
+        : $("#listado-eventos-shuffle a[href]");
+    listingAnchors.toArray().forEach((node) => {
+      const el = $(node);
+      const href = el.attr("href");
+      if (!href) {
+        return;
+      }
+      const article = el.closest("article");
+      if (article.length > 0) {
+        pushRow({ href, card: article });
+      } else {
+        pushRow({
+          href,
+          linkText: el.text().replace(/\s+/g, " ").trim(),
+        });
+      }
+    });
+  }
+
+  return dedupeListingRowsByUrl(rows);
+}
 
 export const ingestPuntoticket = async ({
   page = 1,
@@ -35,22 +161,13 @@ export const ingestPuntoticket = async ({
   const listingHtml = await fetchHtml(listingUrl);
   const $ = load(listingHtml);
   const requestedLimit = limit ?? 20;
-  const listingLinks = [
-    ...new Set(
-      $("#listado-eventos-shuffle article a[href]")
-        .toArray()
-        .map((node) => $(node).attr("href"))
-        .filter((href): href is string => Boolean(href))
-        .map((href) => absoluteUrl(baseUrl, href)),
-    ),
-  ].filter((url) => !/\/paginas\//.test(url) && !/\/evento\/?$/.test(url));
+  const listingRows = parsePuntoticketListingRows($, baseUrl);
   const offset = Math.max(page - 1, 0) * requestedLimit;
-  const candidateLinks = listingLinks.slice(offset, offset + requestedLimit);
+  const candidateRows = listingRows.slice(offset, offset + requestedLimit);
   const events = [];
-  const genericSpanishDateMatch =
-    /\d{1,2}\s*(?:de)?\s*(?:ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:tiembre)?|sept|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?)(?:\s*(?:de)?\s*20\d{2})?(?:[^\d]{1,10}\d{1,2}[:.]\d{2})?/i;
 
-  for (const sourceUrl of candidateLinks) {
+  for (const row of candidateRows) {
+    const sourceUrl = row.sourceUrl;
     try {
       const { html: detailHtml, markdown: pageMarkdown } =
         await scrapeDetailHtmlAndOptionalMarkdown(
@@ -69,14 +186,11 @@ export const ingestPuntoticket = async ({
         continue;
       }
 
-      const title =
-        $$("h1").first().text().trim() ||
-        $$("title")
-          .text()
-          .replace(/^Entradas\s*/i, "")
-          .replace(/\s+-\s+.*$/, "")
-          .trim() ||
-        slugFromUrl(sourceUrl);
+      const title = mergeListingDetailStrings({
+        detailTitle: tryPuntoticketTitleFromDetail($$) ?? "",
+        listingTitle: row.prefetch.title,
+        sourceUrl,
+      });
       const h2Headline = $$("h2").first().text().replace(/\s+/g, " ").trim();
       const categoryText =
         text.match(
@@ -95,8 +209,11 @@ export const ingestPuntoticket = async ({
         )?.[0] ??
         null;
       const parsedDateFallback =
-        text.match(genericSpanishDateMatch)?.[0] ?? null;
-      const resolvedDateText = dateText ?? parsedDateFallback;
+        [...text.matchAll(GENERIC_SPANISH_DATE_REGEX)][0]?.[0] ?? null;
+      const resolvedDateText = mergeOptionalDateText(
+        dateText ?? parsedDateFallback,
+        row.prefetch.dateText,
+      );
       const dateInfo = resolvedDateText
         ? parseSpanishDateRange(resolvedDateText)
         : null;
@@ -130,13 +247,15 @@ export const ingestPuntoticket = async ({
         )?.[0] ??
         null;
       const description = eventText ?? text.slice(0, 1800);
-      const imageUrl =
+      const imageUrl = mergeOptionalImage(
         $$('meta[property="og:image"]').attr("content") ??
-        $$("img")
-          .toArray()
-          .map((node) => extractImageUrl($$(node)))
-          .find((src) => Boolean(src && src.includes("eventos"))) ??
-        null;
+          $$("img")
+            .toArray()
+            .map((node) => extractImageUrl($$(node)))
+            .find((src) => Boolean(src && src.includes("eventos"))) ??
+          null,
+        row.prefetch.imageUrl,
+      );
       const audience = mapAudience(text);
 
       if (!resolvedDateText || !dateInfo) {
@@ -182,11 +301,17 @@ export const ingestPuntoticket = async ({
             : undefined,
         parserPayload: {
           detailText: text.slice(0, 5000),
+          listingPrefetch: row.prefetch,
         },
         qualityScore: 86,
       };
 
       const snippets: RawSnippets = {
+        ...(row.prefetch.listingSnippet
+          ? {
+              listing: `LISTING:\n${row.prefetch.listingSnippet.slice(0, 7500)}`,
+            }
+          : {}),
         detail: [
           `TITLE:\n${title}`,
           resolvedDateText ? `DATE:\n${resolvedDateText}` : null,
@@ -259,8 +384,8 @@ export const ingestPuntoticket = async ({
     listingUrl,
     page,
     count: events.length,
-    processed: candidateLinks.length,
-    skipped: Math.max(candidateLinks.length - events.length, 0),
+    processed: candidateRows.length,
+    skipped: Math.max(candidateRows.length - events.length, 0),
     persisted: persist,
     errors,
     events,

@@ -9,6 +9,16 @@ import type {
   EventCreateInput,
   EventTierInput,
 } from "../../validation/events.schema.js";
+import {
+  SPANISH_DATE_DETAILS_REGEX,
+  SPANISH_MONTH_TOKEN_TO_INDEX,
+} from "./parsing-constants.js";
+import {
+  inferRegionFromTextHints,
+  matchCommuneInText,
+  METRO_REGION,
+  resolveOfficialCommuneByName,
+} from "./chileCommunes.js";
 
 export type IngestSourceOptions = {
   page?: number;
@@ -42,6 +52,17 @@ export type IngestionError = {
   url?: string;
 };
 
+export type IngestSkipReason =
+  | "missing_date"
+  | "not_event"
+  | "past_event"
+  | "polluted"
+  | "detail_error"
+  | "persist_error"
+  | "other";
+
+export type IngestSkipCounts = Partial<Record<IngestSkipReason, number>>;
+
 export type IngestionResult = {
   source: string;
   listingUrl: string;
@@ -54,40 +75,24 @@ export type IngestionResult = {
   events: EventCreateInput[];
   /** Present for region-scraped sources (e.g. Chile Cultura). */
   region?: string;
+  /** Aggregated skip reasons (listing/detail/normalize loops). */
+  skipCounts?: IngestSkipCounts;
 };
+
+const UNKNOWN_COMMUNE = "Sin comuna informada";
+const UNKNOWN_CITY = "Sin ciudad informada";
+
+export function recordSkip(
+  counts: IngestSkipCounts | undefined,
+  reason: IngestSkipReason,
+): IngestSkipCounts {
+  return { ...counts, [reason]: (counts?.[reason] ?? 0) + 1 };
+}
 
 type DateRangeResult = {
   startAt: Date;
   endAt: Date | null;
   allDay: boolean;
-};
-
-const monthMap: Record<string, number> = {
-  ene: 0,
-  enero: 0,
-  feb: 1,
-  febrero: 1,
-  mar: 2,
-  marzo: 2,
-  abr: 3,
-  abril: 3,
-  may: 4,
-  mayo: 4,
-  jun: 5,
-  junio: 5,
-  jul: 6,
-  julio: 6,
-  ago: 7,
-  agosto: 7,
-  sep: 8,
-  sept: 8,
-  septiembre: 8,
-  oct: 9,
-  octubre: 9,
-  nov: 10,
-  noviembre: 10,
-  dic: 11,
-  diciembre: 11,
 };
 
 const communeAliases = [
@@ -203,6 +208,31 @@ export const extractBodyText = (html: string) => {
   $("script, style, noscript, template").remove();
 
   return $("body").text().replace(/\s+/g, " ").trim();
+};
+
+/** Prefer structured paragraphs; fall back to full body text (noisier). */
+export const getMeaningfulParagraphs = (
+  html: string,
+  selectors = [
+    "article p",
+    "main p",
+    ".entry-content p",
+    ".post-content p",
+    ".single-content p",
+  ],
+) => {
+  const $ = load(html);
+  $("script, style, noscript, template, nav, footer, header").remove();
+  for (const sel of selectors) {
+    const parts = $(sel)
+      .toArray()
+      .map((node) => $(node).text().replace(/\s+/g, " ").trim())
+      .filter((t) => t.length > 48);
+    if (parts.length > 0) {
+      return parts.slice(0, 8).join("\n\n");
+    }
+  }
+  return extractBodyText(html);
 };
 
 export const absoluteUrl = (baseUrl: string, pathOrUrl: string) =>
@@ -362,7 +392,8 @@ const parseSingleDate = (
 ) => {
   const currentYear = new Date().getFullYear();
   const parsedYear = year ? Number(year) : currentYear;
-  const parsedMonth = monthMap[stripAccents(month.toLowerCase())];
+  const parsedMonth =
+    SPANISH_MONTH_TOKEN_TO_INDEX[stripAccents(month.toLowerCase())];
   const parsedDay = Number(day);
   const parsedHours = Number(hours ?? "0");
   const parsedMinutes = Number(minutes ?? "0");
@@ -472,24 +503,61 @@ export const inferVenueCommune = (value: string | null | undefined) => {
 export const inferLocation = (value: string | null | undefined) => {
   const normalized = value ?? "";
   const lower = stripAccents(normalized.toLowerCase());
+
+  const finalize = (commune: string, region: string) => ({
+    commune,
+    city: region === METRO_REGION ? "Santiago" : commune,
+    region,
+  });
+
   const communeFromVenue = inferVenueCommune(normalized);
-  const commune =
-    communeFromVenue ??
-    communeAliases.find((candidate) =>
-      lower.includes(stripAccents(candidate.toLowerCase())),
-    ) ??
-    "Sin comuna informada";
-  const city =
-    commune === "Sin comuna informada" ? "Sin ciudad informada" : "Santiago";
-  const region =
-    lower.includes("metropolitana") || city === "Santiago"
-      ? "Región Metropolitana de Santiago"
-      : null;
+  if (communeFromVenue) {
+    const resolved = resolveOfficialCommuneByName(communeFromVenue);
+    if (resolved) {
+      return finalize(resolved.commune, resolved.region);
+    }
+  }
+
+  const fromIneSubstring = matchCommuneInText(normalized);
+  if (fromIneSubstring) {
+    return finalize(fromIneSubstring.commune, fromIneSubstring.region);
+  }
+
+  const aliasHit = communeAliases.find((candidate) =>
+    lower.includes(stripAccents(candidate.toLowerCase())),
+  );
+  if (aliasHit) {
+    const resolved = resolveOfficialCommuneByName(aliasHit);
+    if (resolved) {
+      return finalize(resolved.commune, resolved.region);
+    }
+  }
+
+  const hint = inferRegionFromTextHints(normalized);
+  if (hint) {
+    return {
+      commune: UNKNOWN_COMMUNE,
+      city: UNKNOWN_CITY,
+      region: hint,
+    };
+  }
+
+  if (
+    lower.includes("metropolitana") ||
+    /\bgran santiago\b/i.test(normalized) ||
+    /\brm\b/.test(lower)
+  ) {
+    return {
+      commune: UNKNOWN_COMMUNE,
+      city: "Santiago",
+      region: METRO_REGION,
+    };
+  }
 
   return {
-    commune,
-    city,
-    region,
+    commune: UNKNOWN_COMMUNE,
+    city: UNKNOWN_CITY,
+    region: null,
   };
 };
 
