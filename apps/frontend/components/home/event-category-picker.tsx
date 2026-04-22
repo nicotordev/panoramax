@@ -35,6 +35,9 @@ interface EventCategoryPickerProps {
   allEvents: Event[]
 }
 
+const ALGOLIA_EVENTS_INDEX_NAME =
+  process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME ?? ""
+
 const CATEGORY_ICONS: Record<CategoryPrimaryEnum, ReactNode> = {
   [CategoryPrimaryEnum.music]: <MdMusicNote />,
   [CategoryPrimaryEnum.theatre]: <MdTheaterComedy />,
@@ -85,6 +88,20 @@ function getEventTitle(event: Event) {
   return event.translation?.title || event.title
 }
 
+function getCategoryFilterHref(category: CategoryPrimaryEnum) {
+  if (!ALGOLIA_EVENTS_INDEX_NAME) {
+    return `/events?category=${category}`
+  }
+
+  const params = new URLSearchParams()
+  params.set(
+    `${ALGOLIA_EVENTS_INDEX_NAME}[refinementList][categoryPrimary][0]`,
+    category
+  )
+
+  return `/events?${params.toString()}`
+}
+
 export default function EventCategoryPicker({
   allEvents,
 }: EventCategoryPickerProps) {
@@ -107,7 +124,7 @@ export default function EventCategoryPicker({
   const previewEvents = useMemo(() => allEvents.slice(0, 8), [allEvents])
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8 mt-8">
+    <section className="mx-auto mt-8 w-full max-w-7xl px-6 py-4 lg:px-8">
       <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -147,7 +164,7 @@ export default function EventCategoryPicker({
         {categories.map((category) => (
           <SwiperSlide key={category.key} className="h-auto! w-28! sm:w-32!">
             <Link
-              href={`/events?category=${category.key}`}
+              href={getCategoryFilterHref(category.key)}
               className={cn(
                 "group relative flex h-full min-h-28 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border border-border/70 p-3 text-center text-foreground shadow-sm transition-colors hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none sm:min-h-32",
                 "active:border-primary/70"
@@ -156,7 +173,7 @@ export default function EventCategoryPicker({
             >
               <Image
                 src={CATEGORY_IMAGE_SRC[category.key]}
-                alt=""
+                alt={category.label}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                 sizes="128px"
