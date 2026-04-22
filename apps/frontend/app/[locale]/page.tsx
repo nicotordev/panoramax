@@ -39,7 +39,7 @@ export default async function Page({ params }: HomePageProps) {
     serverClient.getCurrentWeekEvents({ limit: 8, locale: apiLocale }),
     getFeaturedEventsFromAlgolia(apiLocale, 5),
     serverClient.getEvents({
-      limit: 24,
+      limit: 6,
       sortBy: "startAtAsc",
     }),
     serverClient.getEvents({

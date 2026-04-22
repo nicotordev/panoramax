@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { Badge } from "../ui/badge"
 import { Card } from "../ui/card"
 import { getEventCardImageSrc } from "@/lib/event-card.utils"
+import Image from "next/image";
 
 interface EventGalleryCardProps {
   event: Event
@@ -44,8 +45,8 @@ export function EventGalleryCard({
             : "ring-1 ring-border/50"
         )}
       >
-        <div className="relative aspect-[3/4] w-full">
-          <img
+        <div className="relative aspect-3/4 w-full">
+          <Image
             src={imageSrc}
             alt={event.title}
             className={cn(
@@ -53,11 +54,13 @@ export function EventGalleryCard({
               isSelected ? "scale-105" : "group-hover:scale-110"
             )}
             loading="lazy"
+            width={220}
+            height={120}
           />
 
           <div
             className={cn(
-              "absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 transition-opacity duration-300",
+              "absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/80 via-black/20 to-transparent p-4 transition-opacity duration-300",
               isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
           >
@@ -69,7 +72,7 @@ export function EventGalleryCard({
                 variant="secondary"
                 className="h-4 px-1.5 py-0 text-[10px]"
               >
-                {event.isFree ? t("free") : (event.priceText ?? t("paid"))}
+                {event.isFree ? t("free") : (event.priceMin ?? t("paid"))}
               </Badge>
             </div>
           </div>

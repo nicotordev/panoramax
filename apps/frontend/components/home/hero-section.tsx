@@ -12,7 +12,7 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
   const t = useTranslations("Navigation")
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-background">
+    <div className="relative flex h-[60vh] w-full flex-col overflow-hidden bg-background">
       {/* Video background with blending effects, layers reversed for visual interest */}
       <div className="pointer-events-none absolute inset-0 z-10 h-full w-full bg-primary mix-blend-multiply" />
 
@@ -42,14 +42,6 @@ export default function HeroSection({ events, eventsMeta }: HeroSectionProps) {
           <div className="flex flex-col gap-8">
             {/* Título o Intro opcional si lo necesitas, si no, vamos directo al Search */}
             <div className="max-w-2xl space-y-6">
-              <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-foreground backdrop-blur-md">
-                <span className="relative mr-2 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
-                </span>
-                {t("live_events")}
-              </div>
-
               {/* Barra de búsqueda con Glassmorphism extremo */}
               <div className="w-full rounded-2xl">
                 <Search

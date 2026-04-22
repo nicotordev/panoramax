@@ -65,7 +65,7 @@ export function RandomBackground({
     // Se agregó pointer-events-none para garantizar que el fondo nunca bloquee los clics de la UI
     <div
       className={cn(
-        "pointer-events-none fixed inset-0 z-1 overflow-hidden",
+        "pointer-events-none fixed inset-0 z-0 overflow-hidden",
         className
       )}
     >

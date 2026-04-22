@@ -99,7 +99,11 @@
     "browseEvents": "Alle Events",
     "backHome": "Zur Startseite",
     "moreHeading": "Mehr diese Woche",
-    "moreDescription": "Weitere Events vor Wochenende."
+    "moreDescription": "Weitere Events vor Wochenende.",
+    "mapTitle": "Auf der Karte",
+    "mapDescription": "Vor-Ort-Events mit Standort. Tippen Sie auf eine Markierung für Details.",
+    "mapNoCoordinates": "Für diese Woche liegen noch keine Kartenkoordinaten vor; die Orte stehen weiterhin auf jeder Veranstaltungsseite.",
+    "mapViewEvent": "Event ansehen"
   },
   "EventPage": {
     "backHome": "Zur Startseite",

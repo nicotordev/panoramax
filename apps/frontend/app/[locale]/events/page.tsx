@@ -37,6 +37,7 @@ export default async function EventsPage({ params }: EventsPageProps) {
     // MEJORA: Se cambió a <main> por semántica y se agregó min-h-screen
     <main className="relative min-h-screen overflow-x-clip pt-12 pb-20">
       <RandomBackground />
+
       <MainNav />
 
       {/* MEJORA: Blobs responsivos (más pequeños en móvil, grandes en desktop) */}

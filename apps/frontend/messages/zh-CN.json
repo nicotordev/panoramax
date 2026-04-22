@@ -106,7 +106,11 @@
     "browseEvents": "查看全部活动",
     "backHome": "返回首页",
     "moreHeading": "本周更多",
-    "moreDescription": "本周结束前还有哪些活动。"
+    "moreDescription": "本周结束前还有哪些活动。",
+    "mapTitle": "地图",
+    "mapDescription": "有地点标记的线下活动。点击标记查看详情。",
+    "mapNoCoordinates": "本周的线下活动尚未提供地图坐标；地点信息仍显示在各活动卡片中。",
+    "mapViewEvent": "查看活动"
   },
   "EventPage": {
     "backHome": "返回首页",

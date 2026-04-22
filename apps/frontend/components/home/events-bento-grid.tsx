@@ -13,6 +13,7 @@ import {
   HiMapPin,
   HiSparkles,
 } from "react-icons/hi2"
+import { Button } from "../ui/button"
 
 interface EventsBentoGridProps {
   events: Event[]
@@ -66,7 +67,7 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
     event.translation?.priceText || event.priceText
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 pt-4 pb-16 lg:px-8">
+    <section className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8 mb-8">
       <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -94,7 +95,7 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
         {heroEvent && (
           <Card className="group relative col-span-1 overflow-hidden border-border/60 bg-card py-0 lg:col-span-6 lg:row-span-2">
             <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-transparent to-background/10" />
-            <div className="relative h-full min-h-[28rem]">
+            <div className="relative h-full min-h-112">
               <Image
                 src={getEventCardImageSrc(heroEvent.imageUrl)}
                 alt={getEventTitle(heroEvent)}
@@ -193,12 +194,11 @@ export default function EventsBentoGrid({ events }: EventsBentoGridProps) {
                       {formatLocation(event)}
                     </p>
                   </div>
-                  <Link
-                    href={`/events/${event.slug || event.id}`}
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/95"
-                  >
-                    {t("viewDetails")}
-                    <HiArrowUpRight className="size-4" />
+                  <Link href={`/events/${event.slug || event.id}`}>
+                    <Button className="mt-4 inline-flex items-center gap-2 text-sm cursor-pointer">
+                      {t("viewDetails")}
+                      <HiArrowUpRight className="size-4" />
+                    </Button>
                   </Link>
                 </div>
               </div>

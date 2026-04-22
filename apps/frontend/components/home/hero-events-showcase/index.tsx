@@ -128,10 +128,6 @@ export default function HeroEventsShowcase({
       <div className="relative z-10 grid w-full grid-cols-1 items-center gap-12 pb-24 lg:grid-cols-2 lg:gap-16">
         <div className="flex flex-col [text-shadow:0_1px_2px_oklch(0_0_0/0.25)]">
           <div className="mb-6 flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-sm">
-              <HiLightBulb className="size-3 text-primary" aria-hidden />
-              {t("liveEvents")}
-            </span>
             <Link
               href="/events"
               className="group flex items-center gap-1 text-sm font-medium text-background dark:text-foreground transition-colors hover:text-foreground"
@@ -263,18 +259,6 @@ export default function HeroEventsShowcase({
                 </button>
               </div>
 
-              <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 rounded-xl border border-border/60 bg-card/90 px-5 py-3 text-center text-card-foreground shadow-lg backdrop-blur-md">
-                <p className="text-xs font-semibold tracking-widest text-primary uppercase">
-                  {formatCategoryLabel(selectedEvent.categoryPrimary)}
-                </p>
-                <p className="mt-0.5 line-clamp-1 text-sm font-semibold">
-                  {selectedEvent.title}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatEventWhen(selectedEvent, locale)} ·{" "}
-                  {formatEventLocation(selectedEvent)}
-                </p>
-              </div>
             </>
           ) : (
             <div className="flex min-h-[320px] w-full max-w-sm flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-background/35 px-6 py-12 text-center shadow-lg backdrop-blur-md">

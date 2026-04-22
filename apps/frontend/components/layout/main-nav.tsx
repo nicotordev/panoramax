@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { navigation } from "@/data/misc.data"
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs"
 import { useTranslations } from "next-intl"
@@ -8,6 +9,7 @@ import { HiArrowLongRight } from "react-icons/hi2"
 import Logo from "../common/logo"
 import MobileMenu from "../home/mobile-menu"
 import ThemeSwitcher from "./theme-switcher"
+import { cn } from "@/lib/utils"
 
 export default function MainNav() {
   const t = useTranslations("HomePage")
@@ -17,8 +19,24 @@ export default function MainNav() {
     (sessionClaims?.public_metadata as { role?: string } | undefined)?.role
   const dashboardHref = userRole === "admin" ? "/admin/dashboard" : "/dashboard"
 
+  const [atTop, setAtTop] = useState(true)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setAtTop(window.scrollY <= 1)
+    }
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
   return (
-    <header className="fixed top-0 right-0 left-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+    <header
+      className={cn(
+        "fixed top-0 right-0 left-0 z-50 border-b border-white/10 transition-colors duration-300",
+        atTop ? "bg-transparent" : "bg-black/50 backdrop-blur-xl"
+      )}
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <div className="flex lg:flex-1">
           <Logo className="h-9 w-auto brightness-0 invert" />{" "}

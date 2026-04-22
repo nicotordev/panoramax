@@ -17,6 +17,7 @@
     "smoke:ingest": "tsx src/scripts/smoke-ingest.ts",
     "images:backfill": "tsx src/scripts/backfill-images.ts",
     "slugs:backfill": "tsx src/scripts/backfill-slugs.ts",
+    "geocode:missing-coordinates": "tsx src/scripts/geocode-missing-coordinates.ts",
     "descriptions:backfill": "tsx src/scripts/backfill-descriptions-llm.ts",
     "api-key:create": "tsx src/scripts/create-api-key.ts",
     "algolia:configure": "tsx src/scripts/configure-algolia.ts",

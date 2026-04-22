@@ -106,7 +106,11 @@
     "browseEvents": "Browse all events",
     "backHome": "Back to home",
     "moreHeading": "More this week",
-    "moreDescription": "Other events before the week ends."
+    "moreDescription": "Other events before the week ends.",
+    "mapTitle": "On the map",
+    "mapDescription": "In-person events with a location pin. Tap a marker for details.",
+    "mapNoCoordinates": "None of this week’s in-person listings include map coordinates yet—locations still appear in each event card.",
+    "mapViewEvent": "View event"
   },
   "EventPage": {
     "backHome": "Back to home",

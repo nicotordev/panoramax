@@ -30,6 +30,20 @@ export function formatPriceRange(event: Event): string | null {
   return null
 }
 
+/** In-person events with valid coordinates; used for multi-event maps. */
+export function eventCoordinates(
+  event: Event,
+): { lat: number; lng: number } | null {
+  if (event.isOnline) return null
+  const lat = event.latitude?.trim()
+  const lng = event.longitude?.trim()
+  if (!lat || !lng) return null
+  const la = Number.parseFloat(lat)
+  const ln = Number.parseFloat(lng)
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return null
+  return { lat: la, lng: ln }
+}
+
 export function mapsSearchUrl(event: Event): string | null {
   const lat = event.latitude?.trim()
   const lng = event.longitude?.trim()

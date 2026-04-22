@@ -106,7 +106,11 @@
     "browseEvents": "Tous les événements",
     "backHome": "Retour à l’accueil",
     "moreHeading": "Encore cette semaine",
-    "moreDescription": "D’autres événements avant la fin de la semaine."
+    "moreDescription": "D’autres événements avant la fin de la semaine.",
+    "mapTitle": "Sur la carte",
+    "mapDescription": "Événements sur place avec repère. Touchez un marqueur pour les détails.",
+    "mapNoCoordinates": "Aucun événement sur place de cette semaine n’a encore de coordonnées cartographiques ; le lieu figure toutefois sur chaque fiche.",
+    "mapViewEvent": "Voir l’événement"
   },
   "EventPage": {
     "backHome": "Retour à l’accueil",

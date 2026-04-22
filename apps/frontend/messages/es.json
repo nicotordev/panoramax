@@ -106,7 +106,11 @@
     "browseEvents": "Ver todos los eventos",
     "backHome": "Volver al inicio",
     "moreHeading": "Más esta semana",
-    "moreDescription": "Otros eventos antes de que termine la semana."
+    "moreDescription": "Otros eventos antes de que termine la semana.",
+    "mapTitle": "En el mapa",
+    "mapDescription": "Eventos presenciales con ubicación. Toca un marcador para ver detalles.",
+    "mapNoCoordinates": "Ningún evento presencial de esta semana tiene coordenadas en el mapa todavía; igual verás la ubicación en cada ficha.",
+    "mapViewEvent": "Ver evento"
   },
   "EventPage": {
     "backHome": "Volver al inicio",
